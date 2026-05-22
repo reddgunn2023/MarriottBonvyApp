@@ -111,7 +111,7 @@
 .occupancy-svg {
   width: 56px;
   height: 56px;
-  transform: rotate(-90deg);
+  transform: rotate(0deg);
 }
 
 .occupancy-bg {
