@@ -1,7 +1,7 @@
 const generateTrendData = () => {
   const hours = [];
   for (let h = 6; h <= 22; h++) {
-    const label = h <= 12 ? `${h}AM` : `${h - 12}PM`;
+    const label = h === 12 ? '12PM' : h < 12 ? `${h}AM` : `${h - 12}PM`;
     hours.push({
       time: label,
       occupancy: Math.floor(Math.random() * 80) + 10,
