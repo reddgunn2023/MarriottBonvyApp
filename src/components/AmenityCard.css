@@ -1,0 +1,187 @@
+.amenity-card {
+  background: var(--marriott-white);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--marriott-gray-200);
+  transition: all 0.2s;
+  overflow: hidden;
+}
+
+.amenity-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.amenity-card.expanded {
+  box-shadow: var(--shadow-lg);
+  border-color: var(--marriott-gold-light);
+}
+
+.amenity-card-header {
+  padding: 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.amenity-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.amenity-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.amenity-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--marriott-gray-900);
+}
+
+.status-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-available {
+  color: var(--status-available);
+  background: var(--status-available-bg);
+}
+
+.status-moderate {
+  color: var(--status-moderate);
+  background: var(--status-moderate-bg);
+}
+
+.status-busy {
+  color: var(--status-busy);
+  background: var(--status-busy-bg);
+}
+
+.amenity-meta {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.amenity-category {
+  font-size: 12px;
+  color: var(--marriott-gray-500);
+}
+
+.amenity-type-badge {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 1px 8px;
+  border-radius: 8px;
+  background: var(--marriott-gray-100);
+  color: var(--marriott-gray-600);
+}
+
+.amenity-desc {
+  font-size: 13px;
+  color: var(--marriott-gray-500);
+  line-height: 1.4;
+}
+
+.amenity-occupancy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.occupancy-ring {
+  position: relative;
+  width: 56px;
+  height: 56px;
+}
+
+.occupancy-svg {
+  width: 56px;
+  height: 56px;
+  transform: rotate(-90deg);
+}
+
+.occupancy-bg {
+  fill: none;
+  stroke: var(--marriott-gray-200);
+  stroke-width: 3;
+}
+
+.occupancy-fill {
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.6s ease;
+}
+
+.occupancy-fill.occupancy-available {
+  stroke: var(--status-available);
+}
+
+.occupancy-fill.occupancy-moderate {
+  stroke: var(--status-moderate);
+}
+
+.occupancy-fill.occupancy-busy {
+  stroke: var(--status-busy);
+}
+
+.occupancy-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.occupancy-number {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--marriott-gray-800);
+}
+
+.occupancy-label {
+  font-size: 11px;
+  color: var(--marriott-gray-500);
+}
+
+.expand-btn {
+  background: none;
+  border: none;
+  color: var(--marriott-gray-400);
+  font-size: 12px;
+  padding: 4px;
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+.amenity-card-body {
+  padding: 0 20px 20px;
+  border-top: 1px solid var(--marriott-gray-100);
+  padding-top: 16px;
+}
+
+@media (max-width: 768px) {
+  .amenity-card-header {
+    padding: 14px;
+    gap: 12px;
+  }
+
+  .amenity-card-body {
+    padding: 0 14px 14px;
+    padding-top: 14px;
+  }
+}
