@@ -225,12 +225,22 @@ GUESTS = {
         "guest_id": "guest-default",
         "guest_name": "Taylor Bonvoy",
         "property_id": "prop-001",
-        "check_in": date.today().isoformat(),
-        "check_out": (date.today() + timedelta(days=3)).isoformat(),
+        "check_in": "2026-03-26",
+        "check_out": "2026-03-29",
         "checked_in": False,
         "plan_your_stay_enabled": False,
         "selected_amenities": [],
-    }
+    },
+    "july-guest": {
+        "guest_id": "july-guest",
+        "guest_name": "Jordan Bonvoy",
+        "property_id": "prop-001",
+        "check_in": "2026-07-01",
+        "check_out": "2026-07-08",
+        "checked_in": False,
+        "plan_your_stay_enabled": False,
+        "selected_amenities": ["Free Breakfast", "Pool", "Fitness Center", "Lounges"],
+    },
 }
 
 TIME_SLOTS = [
@@ -331,6 +341,8 @@ _HISTORICAL_BUSY_DATA = [
 ]
 
 _WEEKEND_BOOST = 0.15
+OUTDOOR_AMENITY_IDS = {"pool", "golf", "tennis", "cabanas", "whirlpool-onsite"}
+INDOOR_DEMAND_BOOST = 0.18
 
 
 def _time_to_minutes(value: str) -> int:
@@ -391,9 +403,9 @@ def get_historical_busy_data() -> list[dict]:
 
 def weather_condition_for(day: date, time_index: int, amenity_name: str) -> str:
     """Deterministic weather signal for local fallback data."""
-    if day.day in {5, 12, 19, 26} and time_index in {2, 3, 4}:
+    if is_severe_weather_window(day, time_index):
         return "severe"
-    if amenity_name in {"Pool", "Golf"} and time_index in {3, 4} and day.weekday() >= 5:
+    if season_for(day) == "summer" and amenity_name in {"Pool", "Golf", "Tennis", "Cabanas"} and 22 <= time_index <= 32:
         return "heat"
     if day.day % 7 == 0:
         return "rain"
@@ -407,6 +419,25 @@ def traffic_condition_for(day: date, time_index: int) -> str:
     if time_index in {2, 3, 4}:
         return "moderate"
     return "light"
+
+
+def season_for(day: date) -> str:
+    if day.month in {12, 1, 2}:
+        return "winter"
+    if day.month in {3, 4, 5}:
+        return "spring"
+    if day.month in {6, 7, 8}:
+        return "summer"
+    return "fall"
+
+
+def is_severe_weather_window(day: date, time_index: int) -> bool:
+    """Deterministic severe weather windows used to exercise weather impacts."""
+    # Summer afternoon storm window for the July guest scenario.
+    if day.month == 7 and day.day in {3, 4} and 24 <= time_index <= 31:
+        return True
+    # Existing occasional early-morning severe events for mock variability.
+    return day.day in {5, 12, 19, 26} and time_index in {2, 3, 4}
 
 
 def _generate_slots_for_range(
@@ -430,9 +461,17 @@ def _generate_slots_for_range(
                 if is_weekend:
                     base_occupancy = min(1.0, base_occupancy + _WEEKEND_BOOST)
 
-                booked = int(capacity * base_occupancy)
-                available = capacity - booked
-                waitlist_count = 2 if available <= 0 else 0
+                weather_condition = weather_condition_for(current_date, idx, amenity["name"])
+                traffic_condition = traffic_condition_for(current_date, idx)
+                weather_blocked = weather_condition == "severe" and amenity["id"] in OUTDOOR_AMENITY_IDS
+                indoor_weather_boost = weather_condition == "severe" and amenity["id"] not in OUTDOOR_AMENITY_IDS
+                if indoor_weather_boost:
+                    base_occupancy = min(1.0, base_occupancy + INDOOR_DEMAND_BOOST)
+
+                booked = 0 if weather_blocked else int(capacity * base_occupancy)
+                available = 0 if weather_blocked else capacity - booked
+                waitlist_count = 0 if weather_blocked else (2 if available <= 0 else 0)
+                status = "WEATHER_BLOCKED" if weather_blocked else ("FULL" if available <= 0 else "AVAILABLE")
 
                 slots.append(
                     {
@@ -451,9 +490,13 @@ def _generate_slots_for_range(
                         "waitlist": waitlist_count,
                         "waitlistGuests": [],
                         "reservedGuests": [],
-                        "weatherCondition": weather_condition_for(current_date, idx, amenity["name"]),
-                        "trafficCondition": traffic_condition_for(current_date, idx),
-                        "status": "FULL" if available <= 0 else "AVAILABLE",
+                        "season": season_for(current_date),
+                        "weatherCondition": weather_condition,
+                        "weatherSeverity": 1.0 if weather_condition == "severe" else (0.65 if weather_condition in {"heat", "rain"} else 0.1),
+                        "weatherBlocked": weather_blocked,
+                        "indoorWeatherBoost": indoor_weather_boost,
+                        "trafficCondition": traffic_condition,
+                        "status": status,
                     }
                 )
     return slots
@@ -473,6 +516,6 @@ def get_mock_slots(
             num_days = 1
     else:
         start = date.today()
-        num_days = 5
+        num_days = 30
 
     return copy.deepcopy(_generate_slots_for_range(property_id, start, num_days))

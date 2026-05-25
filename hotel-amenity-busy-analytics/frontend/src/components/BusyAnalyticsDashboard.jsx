@@ -12,6 +12,7 @@ import {
   checkInGuest,
   fetchAmenityTypes,
   fetchBusyAnalytics,
+  fetchGuestProfile,
   fetchGuestSchedule,
   fetchProperties,
   fetchRecommendations,
@@ -33,9 +34,10 @@ function addDays(dateStr, days) {
   return d.toISOString().split("T")[0];
 }
 
-function busyColor(score) {
-  if (score <= 0.4) return "#2e7d32";
-  if (score <= 0.7) return "#b77716";
+function statusColor(entry) {
+  if (entry.slot?.weather_blocked || entry.slot?.status === "WEATHER_BLOCKED") return "#9ca3af";
+  if (entry.statusScore <= 0.4) return "#2e7d32";
+  if (entry.statusScore <= 0.7) return "#b77716";
   return "#a23b2a";
 }
 
@@ -95,8 +97,15 @@ export default function BusyAnalyticsDashboard() {
     async function loadInitialData() {
       const loadedProperties = await fetchProperties();
       setProperties(loadedProperties);
+      const guestProfile = await fetchGuestProfile(guestId);
+      if (guestProfile.guest_name) setGuestName(guestProfile.guest_name);
+      if (guestProfile.check_in) setCheckIn(guestProfile.check_in);
+      if (guestProfile.check_out) setCheckOut(guestProfile.check_out);
+      setCheckedIn(Boolean(guestProfile.checked_in));
+      setPlanEnabled(Boolean(guestProfile.plan_your_stay_enabled));
       const loadedAmenityTypes = await fetchAmenityTypes(propertyId);
-      const defaultSelected = IMPORTANT_AMENITIES.filter((item) => loadedAmenityTypes.includes(item));
+      const defaultSelected = (guestProfile.selected_amenities?.length ? guestProfile.selected_amenities : IMPORTANT_AMENITIES)
+        .filter((item) => loadedAmenityTypes.includes(item));
       setAmenityTypes(loadedAmenityTypes);
       setSelectedAmenities(defaultSelected.length ? defaultSelected : loadedAmenityTypes);
       setAmenity(defaultSelected[0] || loadedAmenityTypes[0] || "");
@@ -219,6 +228,9 @@ export default function BusyAnalyticsDashboard() {
   };
 
   const slotAction = (slot) => {
+    if (slot.weather_blocked || slot.status === "WEATHER_BLOCKED") {
+      return <span className="weather-blocked-badge">Unavailable - severe weather</span>;
+    }
     if (slot.service_type === "open_window") {
       return <span className="open-window-badge">Open window - no reservation needed</span>;
     }
@@ -407,7 +419,7 @@ export default function BusyAnalyticsDashboard() {
                       }}
                     />
                     <Bar dataKey="statusScore" name="Slot Status" cursor="pointer" isAnimationActive={false} onClick={(data) => data?.slot && setSelectedSlotsByAmenity((current) => ({ ...current, [amenityName]: data.slot }))}>
-                      {chartDataFor(rows).map((entry, index) => <Cell key={`${entry.date}-${entry.label}-${index}`} fill={busyColor(entry.statusScore)} />)}
+                      {chartDataFor(rows).map((entry, index) => <Cell key={`${entry.date}-${entry.label}-${index}`} fill={statusColor(entry)} />)}
                     </Bar>
                   </BarChart>
                 </div>
@@ -422,15 +434,16 @@ export default function BusyAnalyticsDashboard() {
                       <div><dt>Busy</dt><dd>{scoreLevel(selectedSlotsByAmenity[amenityName].busy_score)}</dd></div>
                       <div><dt>Demand</dt><dd>{scoreLevel(selectedSlotsByAmenity[amenityName].demand_score)}</dd></div>
                       <div><dt>Forecast</dt><dd>{scoreLevel(selectedSlotsByAmenity[amenityName].future_busy)}</dd></div>
+                      <div><dt>Season</dt><dd>{selectedSlotsByAmenity[amenityName].season || "spring"}</dd></div>
                       <div><dt>Weather</dt><dd>{selectedSlotsByAmenity[amenityName].weather_condition || "Clear"}</dd></div>
                       <div><dt>Traffic</dt><dd>{selectedSlotsByAmenity[amenityName].traffic_condition || "Light"}</dd></div>
-                      <div><dt>Availability</dt><dd>{selectedSlotsByAmenity[amenityName].service_type === "open_window" ? "Open Window" : selectedSlotsByAmenity[amenityName].available <= 0 ? "Full" : `${selectedSlotsByAmenity[amenityName].available} open`}</dd></div>
+                      <div><dt>Availability</dt><dd>{selectedSlotsByAmenity[amenityName].weather_blocked ? "Weather Blocked" : selectedSlotsByAmenity[amenityName].service_type === "open_window" ? "Open Window" : selectedSlotsByAmenity[amenityName].available <= 0 ? "Full" : `${selectedSlotsByAmenity[amenityName].available} open`}</dd></div>
                     </dl>
                     <div className="slot-detail-actions">{slotAction(selectedSlotsByAmenity[amenityName])}</div>
                     <div className="forecast-detail-note">
                       <strong>Forecast details</strong>
                       <p>{forecastSummary(selectedSlotsByAmenity[amenityName])}</p>
-                      <small>Signals: busy {selectedSlotsByAmenity[amenityName].busy_score.toFixed(2)}, demand {selectedSlotsByAmenity[amenityName].demand_score.toFixed(2)}, weather {selectedSlotsByAmenity[amenityName].weather_condition || "clear"}, traffic {selectedSlotsByAmenity[amenityName].traffic_condition || "light"}.</small>
+                      <small>Signals: busy {selectedSlotsByAmenity[amenityName].busy_score.toFixed(2)}, demand {selectedSlotsByAmenity[amenityName].demand_score.toFixed(2)}, weather {selectedSlotsByAmenity[amenityName].weather_condition || "clear"}, traffic {selectedSlotsByAmenity[amenityName].traffic_condition || "light"}{selectedSlotsByAmenity[amenityName].indoor_weather_boost ? ", indoor demand boosted by weather" : ""}.</small>
                     </div>
                   </div>
                 ) : (

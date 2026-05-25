@@ -36,6 +36,11 @@ export async function saveGuestConsent(consent) {
   return res.data;
 }
 
+export async function fetchGuestProfile(guestId) {
+  const res = await axios.get(`${GUEST_BASE}/${guestId}`);
+  return res.data;
+}
+
 export async function fetchGuestSchedule(guestId) {
   const res = await axios.get(`${GUEST_BASE}/${guestId}/schedule`);
   return res.data.schedule || [];

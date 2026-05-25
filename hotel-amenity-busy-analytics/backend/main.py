@@ -193,7 +193,11 @@ def _slot_score_model(slot: dict) -> SlotScore:
         available=slot["available"],
         waitlist_count=slot.get("waitlist", 0),
         service_type=slot.get("serviceType", "reservation"),
+        season=slot.get("season", "spring"),
         weather_condition=slot.get("weatherCondition", "clear"),
+        weather_severity=slot.get("weatherSeverity", 0.0),
+        weather_blocked=slot.get("weatherBlocked", False),
+        indoor_weather_boost=slot.get("indoorWeatherBoost", False),
         traffic_condition=slot.get("trafficCondition", "light"),
         status=slot["status"],
     )
