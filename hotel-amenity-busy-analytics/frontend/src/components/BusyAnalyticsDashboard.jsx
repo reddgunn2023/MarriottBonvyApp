@@ -31,10 +31,10 @@ const BUSY_COLORS = {
 };
 
 const RESORT_HIGHLIGHTS = [
-  { value: "685", label: "Guest rooms & suites" },
-  { value: "5-acre", label: "Tidal Cove waterpark" },
-  { value: "3-story", label: "Spa & wellness collective" },
-  { value: "2", label: "Championship golf courses" },
+  { value: "All-suite", label: "Extended-stay hotel" },
+  { value: "Free", label: "Hot breakfast daily" },
+  { value: "Outdoor", label: "Pool and hot tub" },
+  { value: "Near", label: "Disneyland Resort" },
 ];
 
 const FEATURED_AMENITY_TABS = [
@@ -46,34 +46,34 @@ const FEATURED_AMENITY_TABS = [
 
 const PROPERTY_AMENITIES_ONSITE = [
   { icon: "♻", name: "Sustainability" },
-  { icon: "🍽", name: "Restaurant On-Site", detail: "1 Restaurant", amenity: "Restaurants" },
-  { icon: "✓", name: "Convenience Store" },
-  { icon: "🛎", name: "All-Suites" },
-  { icon: "≈", name: "Outdoor Pool", detail: "Complimentary", amenity: "Pool" },
-  { icon: "♨", name: "Whirlpool", detail: "Complimentary", amenity: "Whirlpool Onsite" },
-  { icon: "⌁", name: "Cabanas/Palapas", detail: "$ 250.00", amenity: "Pool" },
-  { icon: "🍸", name: "On-Site Bar", detail: "1 Bar", amenity: "Lounges" },
-  { icon: "▣", name: "Business Center" },
-  { icon: "▤", name: "Meeting Space" },
-  { icon: "💪", name: "Fitness Center", detail: "Complimentary", amenity: "Fitness Center" },
-  { icon: "▧", name: "On-Site Laundry" },
+  { icon: "⌁", name: "Free Wifi" },
+  { icon: "▱", name: "Free Hot Breakfast", detail: "Monday-Friday 6:30 - 9:30 AM\nSaturday-Sunday 7:00 - 10:00 AM", amenity: "Free Breakfast" },
+  { icon: "☕", name: "Free Coffee/Tea" },
+  { icon: "▤", name: "Convenience Store" },
+  { icon: "▧", name: "Gift Shop" },
+  { icon: "≈", name: "Outdoor Pool", amenity: "Pool" },
+  { icon: "♨", name: "Hot Tub", amenity: "Whirlpool Onsite" },
+  { icon: "💪", name: "Fitness Center", amenity: "Fitness Center" },
+  { icon: "▣", name: "Meeting Space" },
+  { icon: "🍽", name: "Restaurant", amenity: "Restaurants" },
+  { icon: "▧", name: "Laundry" },
 ];
 
 const ROOM_AMENITIES_ONSITE = [
+  { icon: "▤", name: "Full Kitchen" },
   { icon: "☕", name: "Coffee Maker" },
-  { icon: "▥", name: "In-Room Safe" },
-  { icon: "▤", name: "Work Station" },
-  { icon: "▣", name: "Private Balcony" },
+  { icon: "⌁", name: "Free WiFi" },
+  { icon: "▣", name: "Ergonomic Workspace" },
 ];
 
 const HOTEL_SERVICES_ONSITE = [
-  { icon: "▱", name: "Free Hot Breakfast", detail: "Monday-Friday 6:30 AM-9:30 AM\nSaturday-Sunday 7:00 AM-10:00 AM", amenity: "Free Breakfast" },
+  { icon: "▱", name: "Free Hot Breakfast", detail: "Monday-Friday 6:30 - 9:30 AM\nSaturday-Sunday 7:00 - 10:00 AM", amenity: "Free Breakfast" },
   { icon: "✓", name: "Free Coffee/Tea in Lobby" },
-  { icon: "♿", name: "Valet Dry Cleaning" },
-  { icon: "♿", name: "Same Day Dry Cleaning" },
+  { icon: "♿", name: "Dry Cleaning Service" },
   { icon: "☼", name: "Wake-Up Calls" },
   { icon: "↗", name: "Service Request" },
-  { icon: "✓", name: "Housekeeping", detail: "Every Other Day" },
+  { icon: "✓", name: "Digital Check In" },
+  { icon: "▧", name: "Mobile Key" },
 ];
 
 function busyColor(score) {
@@ -284,7 +284,7 @@ export default function BusyAnalyticsDashboard() {
   const isReservedByGuest = (slot) =>
     guestSchedule.some((item) => item.slot_id === slot.slotId);
 
-  const tripPropertyName = selectedProperty?.name || "JW Marriott Miami Turnberry Resort & Spa";
+  const tripPropertyName = selectedProperty?.name || "Residence Inn at Anaheim Resort/Convention Center";
   const featuredItems = activeFeatureTab === "hotel"
     ? HOTEL_SERVICES_ONSITE
     : activeFeatureTab === "room"
@@ -383,7 +383,7 @@ export default function BusyAnalyticsDashboard() {
             <div>
               <span className="eyebrow">Upcoming Trip</span>
               <h2>{tripPropertyName}</h2>
-              <p>Aventura, Florida · {checkIn} - {checkOut}</p>
+              <p>Anaheim, California · {checkIn} - {checkOut}</p>
             </div>
             <button onClick={(event) => { event.stopPropagation(); setView("booking"); }}>View Trip</button>
           </section>
@@ -406,7 +406,7 @@ export default function BusyAnalyticsDashboard() {
           <section className="trip-hero-card">
             <span className="eyebrow">Upcoming Trip</span>
             <h1>{tripPropertyName}</h1>
-            <p>{selectedProperty?.location || "Aventura, Florida"} · {checkIn} through {checkOut}</p>
+            <p>{selectedProperty?.location || "Anaheim, California"} · {checkIn} through {checkOut}</p>
           </section>
           <section className="trip-option-grid">
             <article className="trip-option-card">
@@ -438,7 +438,7 @@ export default function BusyAnalyticsDashboard() {
           <span className="brand-mark">JW</span>
           <div>
             <span className="eyebrow">Marriott Bonvoy</span>
-            <strong>Turnberry Amenity Intelligence</strong>
+            <strong>Anaheim Stay Planner</strong>
           </div>
         </div>
         <div className="nav-links" aria-hidden="true">
@@ -475,16 +475,16 @@ export default function BusyAnalyticsDashboard() {
 
       <header className="resort-hero">
         <div className="hero-copy">
-          <span className="eyebrow">Aventura, Florida</span>
+          <span className="eyebrow">Anaheim, California</span>
           <h1>{tripPropertyName}</h1>
           <p>
-            A tropical resort command center for check-in, guest consent, amenity
-            planning, waitlists, and guest-specific scheduling safeguards.
+            A Residence Inn stay planner for check-in, guest consent, amenity
+            insights, waitlists, and service recommendations during your Anaheim stay.
           </p>
           <div className="hero-actions" aria-label="Property highlights">
-            <span>Luxury resort</span>
-            <span>Tidal Cove Waterpark</span>
-            <span>Spa &amp; Wellness</span>
+            <span>All-suite hotel</span>
+            <span>Free hot breakfast</span>
+            <span>Outdoor pool</span>
           </div>
         </div>
 
@@ -707,11 +707,11 @@ export default function BusyAnalyticsDashboard() {
             <div className="section-heading">
               <span className="eyebrow">Live Capacity</span>
               <h2>
-                Busy Heatmap - {amenity} on {selectedDate}
+                Busy Analytics - {amenity} from {checkIn} to {checkOut}
               </h2>
               <p>
-                Compare current busy score, demand score, and LightGBM futureBusy
-                prediction before reserving or joining a waiting list.
+                Review busy, demand, weather, and traffic-informed forecasts across
+                your full stay before reserving or joining a waiting line.
               </p>
             </div>
 
@@ -833,10 +833,10 @@ export default function BusyAnalyticsDashboard() {
                     className="rec-score"
                     style={{ color: busyColor(rec.future_busy) }}
                   >
-                    futureBusy: {(rec.future_busy * 100).toFixed(0)}%
+                    Demand: {rec.future_busy <= 0.3 ? "Light" : rec.future_busy <= 0.6 ? "Moderate" : "High"}
                   </div>
                   <p className="rec-reason">{rec.reason}</p>
-                  <p className="rec-avail">{rec.available} spots available</p>
+                  <p className="rec-avail">Recommended time for your stay plan</p>
                 </div>
               ))}
             </div>

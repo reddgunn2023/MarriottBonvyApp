@@ -24,14 +24,12 @@ def get_recommendations(
 
     recommendations = []
     for slot in available_slots[:top_n]:
-        pct_free = round((slot["available"] / slot["capacity"]) * 100)
-        future_pct = round(slot["futureBusy"] * 100)
         if slot["futureBusy"] <= 0.3:
-            reason = f"Predicted calm window - {pct_free}% availability, future busy {future_pct}%"
+            reason = "Demand is light. Recommended for a quieter visit."
         elif slot["futureBusy"] <= 0.6:
-            reason = f"Moderate predicted demand - {pct_free}% availability"
+            reason = "Demand is moderate. Recommended if this time fits your stay plan."
         else:
-            reason = f"Likely to fill soon but {slot['available']} spot(s) left"
+            reason = "Demand is high. Consider this only if your schedule is limited."
 
         recommendations.append(
             {

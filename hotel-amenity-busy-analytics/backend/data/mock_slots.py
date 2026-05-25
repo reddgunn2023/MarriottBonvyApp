@@ -98,8 +98,8 @@ AMENITIES = [amenity["name"] for amenity in AMENITY_COLLECTIONS]
 PROPERTIES = [
     {
         "id": "prop-001",
-        "name": "JW Marriott Miami Turnberry Resort & Spa",
-        "location": "Aventura, Florida",
+        "name": "Residence Inn at Anaheim Resort/Convention Center",
+        "location": "Anaheim, California",
         "amenity_ids": [
             "golf",
             "spa",
@@ -111,7 +111,7 @@ PROPERTIES = [
             "lounges",
             "ev-charging",
         ],
-        "services": ["Tidal Cove Waterpark", "Cabanas", "Valet", "Concierge"],
+        "services": ["Digital Check In", "Mobile Key", "Service Request", "Wake-Up Calls", "Laundry", "Dry Cleaning Service", "Gift Shop"],
     },
     {
         "id": "prop-002",
