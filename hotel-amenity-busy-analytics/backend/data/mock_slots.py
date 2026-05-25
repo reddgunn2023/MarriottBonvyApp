@@ -50,7 +50,7 @@ AMENITY_COLLECTIONS = [
         "name": "Free Breakfast",
         "collection": "freeBreakFast",
         "category": "Dining",
-        "service_type": "reservation",
+        "service_type": "open_window",
         "description": "Free hot breakfast: Monday-Friday 6:30 AM-9:30 AM; Saturday-Sunday 7:00 AM-10:00 AM.",
         "hours": {
             "monday_friday": "6:30 AM-9:30 AM",
@@ -288,12 +288,33 @@ def _expand_pattern(values: list[float]) -> list[float]:
     return [value for value in values for _ in range(4)]
 
 
+def _pattern_with_overrides(overrides: dict[int, float], default: float = 0.05) -> list[float]:
+    """Create a 48-slot 30-minute pattern with slot-specific busy levels."""
+    return [overrides.get(index, default) for index in range(len(TIME_SLOTS))]
+
+
 _PEAK_PATTERNS = {
     "Golf": _expand_pattern([0.0, 0.1, 0.7, 0.95, 0.85, 0.6, 0.5, 0.3, 0.1, 0.0, 0.0, 0.0]),
     "Spa": _expand_pattern([0.0, 0.1, 0.3, 0.5, 0.9, 1.0, 0.85, 0.7, 0.6, 0.2, 0.1, 0.0]),
-    "Fitness Center": _expand_pattern([0.2, 0.4, 0.8, 0.6, 0.4, 0.3, 0.3, 0.5, 0.7, 0.4, 0.2, 0.1]),
-    "Pool": _expand_pattern([0.0, 0.0, 0.1, 0.4, 0.8, 1.0, 0.9, 0.7, 0.3, 0.05, 0.0, 0.0]),
-    "Free Breakfast": _expand_pattern([0.0, 0.0, 0.4, 0.95, 1.0, 0.2, 0.05, 0.0, 0.0, 0.0, 0.0, 0.0]),
+    "Fitness Center": _pattern_with_overrides({
+        10: 0.50, 11: 0.72, 12: 0.88, 13: 0.74, 14: 0.56, 15: 0.42,
+        16: 0.32, 17: 0.28, 18: 0.24, 19: 0.22, 20: 0.30, 21: 0.36,
+        22: 0.44, 23: 0.52, 24: 0.48, 25: 0.40, 26: 0.35, 27: 0.33,
+        28: 0.38, 29: 0.46, 30: 0.60, 31: 0.76, 32: 0.90, 33: 0.82,
+        34: 0.66, 35: 0.50, 36: 0.38, 37: 0.28, 38: 0.22, 39: 0.18,
+        40: 0.16, 41: 0.14, 42: 0.12, 43: 0.10, 44: 0.08, 45: 0.06,
+    }, default=0.04),
+    "Pool": _pattern_with_overrides({
+        14: 0.18, 15: 0.24, 16: 0.34, 17: 0.46, 18: 0.58, 19: 0.70,
+        20: 0.84, 21: 0.96, 22: 1.00, 23: 0.92, 24: 0.86, 25: 0.78,
+        26: 0.72, 27: 0.66, 28: 0.58, 29: 0.50, 30: 0.42, 31: 0.34,
+        32: 0.28, 33: 0.22, 34: 0.18, 35: 0.14, 36: 0.12, 37: 0.10,
+        38: 0.08, 39: 0.07, 40: 0.06, 41: 0.05, 42: 0.04, 43: 0.03,
+    }, default=0.02),
+    "Free Breakfast": _pattern_with_overrides({
+        13: 0.35, 14: 0.55, 15: 0.78, 16: 0.96, 17: 0.82, 18: 0.48,
+        19: 0.36,
+    }, default=0.02),
     "Whirlpool Onsite": _expand_pattern([0.0, 0.0, 0.1, 0.2, 0.45, 0.65, 0.75, 0.8, 0.9, 0.6, 0.3, 0.1]),
     "Restaurants": _expand_pattern([0.0, 0.0, 0.05, 0.1, 0.35, 0.65, 0.55, 0.85, 1.0, 0.9, 0.5, 0.2]),
     "Lounges": _expand_pattern([0.0, 0.0, 0.0, 0.05, 0.1, 0.25, 0.4, 0.65, 0.95, 1.0, 0.7, 0.2]),

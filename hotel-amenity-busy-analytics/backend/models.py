@@ -75,6 +75,7 @@ class SlotScore(BaseModel):
     booked: int
     available: int
     waitlist_count: int
+    service_type: str = "reservation"
     weather_condition: str = "clear"
     traffic_condition: str = "light"
     status: str

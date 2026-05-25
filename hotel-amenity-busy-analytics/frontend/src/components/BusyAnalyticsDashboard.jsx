@@ -219,6 +219,9 @@ export default function BusyAnalyticsDashboard() {
   };
 
   const slotAction = (slot) => {
+    if (slot.service_type === "open_window") {
+      return <span className="open-window-badge">Open window - no reservation needed</span>;
+    }
     const full = slot.available <= 0 || slot.status === "FULL";
     const actionState = actionStates[slot.slot_id];
     if (actionState === "RESERVED") {
@@ -419,7 +422,7 @@ export default function BusyAnalyticsDashboard() {
                       <div><dt>Forecast</dt><dd>{scoreLevel(selectedSlotsByAmenity[amenityName].future_busy)}</dd></div>
                       <div><dt>Weather</dt><dd>{selectedSlotsByAmenity[amenityName].weather_condition || "Clear"}</dd></div>
                       <div><dt>Traffic</dt><dd>{selectedSlotsByAmenity[amenityName].traffic_condition || "Light"}</dd></div>
-                      <div><dt>Availability</dt><dd>{selectedSlotsByAmenity[amenityName].available <= 0 ? "Full" : `${selectedSlotsByAmenity[amenityName].available} open`}</dd></div>
+                      <div><dt>Availability</dt><dd>{selectedSlotsByAmenity[amenityName].service_type === "open_window" ? "Open Window" : selectedSlotsByAmenity[amenityName].available <= 0 ? "Full" : `${selectedSlotsByAmenity[amenityName].available} open`}</dd></div>
                     </dl>
                     <div className="slot-detail-actions">{slotAction(selectedSlotsByAmenity[amenityName])}</div>
                     <div className="forecast-detail-note">
