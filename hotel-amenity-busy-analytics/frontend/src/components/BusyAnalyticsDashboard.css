@@ -2130,3 +2130,37 @@ input {
   font-size: 0.78rem;
   font-weight: 800;
 }
+
+
+.enterprise-rec-groups {
+  display: grid;
+  gap: 22px;
+}
+
+.enterprise-rec-group {
+  display: grid;
+  gap: 12px;
+}
+
+.enterprise-rec-group-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e3ddd5;
+}
+
+.enterprise-rec-group-heading h3 {
+  margin: 0;
+  color: #2c241d;
+  font-size: 1.2rem;
+}
+
+.enterprise-rec-group-heading span {
+  color: #8b6f47;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}

@@ -456,10 +456,25 @@ export default function BusyAnalyticsDashboard() {
             {Object.values(recommendationsByAmenity).some((items) => items.length > 0) && (
               <section className="enterprise-card smart-recommendations-panel">
                 <div className="section-heading"><span className="eyebrow">Smart Recommendations</span><h2>Recommended Planning Windows</h2></div>
-                <div className="enterprise-rec-list">
-                  {Object.entries(recommendationsByAmenity).flatMap(([amenityName, recs]) =>
-                    recs.map((rec) => <article key={`${amenityName}-${rec.slot_id}`}><strong>{amenityName} · {rec.date} · {rec.time_slot}</strong><p>{rec.reason}</p></article>),
-                  )}
+                <div className="enterprise-rec-groups">
+                  {Object.entries(recommendationsByAmenity)
+                    .filter(([, recs]) => recs.length > 0)
+                    .map(([amenityName, recs]) => (
+                      <section className="enterprise-rec-group" key={amenityName}>
+                        <div className="enterprise-rec-group-heading">
+                          <h3>{amenityName}</h3>
+                          <span>{recs.length} recommended windows</span>
+                        </div>
+                        <div className="enterprise-rec-list">
+                          {recs.map((rec) => (
+                            <article key={`${amenityName}-${rec.slot_id}`}>
+                              <strong>{rec.date} · {rec.time_slot}</strong>
+                              <p>{rec.reason}</p>
+                            </article>
+                          ))}
+                        </div>
+                      </section>
+                    ))}
                 </div>
               </section>
             )}
