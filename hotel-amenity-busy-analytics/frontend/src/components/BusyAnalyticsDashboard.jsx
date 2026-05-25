@@ -6,7 +6,6 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
   Cell,
 } from "recharts";
@@ -22,47 +21,7 @@ import {
 } from "../services/amenityApi";
 import "./BusyAnalyticsDashboard.css";
 
-const GUEST_ID = "guest-default";
 const DEFAULT_HOTEL_NAME = "Residence Inn at Anaheim Resort/Convention Center";
-
-const FEATURED_AMENITY_TABS = [
-  { id: "property", label: "Property Amenities", count: 12 },
-  { id: "room", label: "Room Amenities", count: 4 },
-  { id: "hotel", label: "Hotel Services", count: 7 },
-  { id: "all", label: "View All", count: 23 },
-];
-
-const PROPERTY_AMENITIES_ONSITE = [
-  { icon: "♻", name: "Sustainability" },
-  { icon: "⌁", name: "Free Wifi" },
-  { icon: "▱", name: "Free Hot Breakfast", detail: "Monday-Friday 6:30 - 9:30 AM\nSaturday-Sunday 7:00 - 10:00 AM", amenity: "Free Breakfast" },
-  { icon: "☕", name: "Free Coffee/Tea" },
-  { icon: "▤", name: "Convenience Store" },
-  { icon: "▧", name: "Gift Shop" },
-  { icon: "≈", name: "Outdoor Pool", amenity: "Pool" },
-  { icon: "♨", name: "Hot Tub", amenity: "Whirlpool Onsite" },
-  { icon: "💪", name: "Fitness Center", amenity: "Fitness Center" },
-  { icon: "▣", name: "Meeting Space" },
-  { icon: "🍽", name: "Restaurant", amenity: "Restaurants" },
-  { icon: "▧", name: "Laundry" },
-];
-
-const ROOM_AMENITIES_ONSITE = [
-  { icon: "▤", name: "Full Kitchen" },
-  { icon: "☕", name: "Coffee Maker" },
-  { icon: "⌁", name: "Free WiFi" },
-  { icon: "▣", name: "Ergonomic Workspace" },
-];
-
-const HOTEL_SERVICES_ONSITE = [
-  { icon: "▱", name: "Free Hot Breakfast", detail: "Monday-Friday 6:30 - 9:30 AM\nSaturday-Sunday 7:00 - 10:00 AM", amenity: "Free Breakfast" },
-  { icon: "✓", name: "Free Coffee/Tea in Lobby" },
-  { icon: "♿", name: "Dry Cleaning Service" },
-  { icon: "☼", name: "Wake-Up Calls" },
-  { icon: "↗", name: "Service Request" },
-  { icon: "✓", name: "Digital Check In" },
-  { icon: "▧", name: "Mobile Key" },
-];
 
 function todayStr() {
   return new Date().toISOString().split("T")[0];
@@ -80,10 +39,20 @@ function busyColor(score) {
   return "#a23b2a";
 }
 
+function routeContext() {
+  const [propertyFromPath, userFromPath] = window.location.pathname
+    .split("/")
+    .filter(Boolean);
+  return {
+    propertyId: propertyFromPath || "prop-001",
+    guestId: userFromPath || "guest-default",
+  };
+}
+
 export default function BusyAnalyticsDashboard() {
+  const [{ propertyId, guestId }] = useState(routeContext);
   const [properties, setProperties] = useState([]);
   const [amenityTypes, setAmenityTypes] = useState([]);
-  const [propertyId] = useState("prop-001");
   const [amenity, setAmenity] = useState("Free Breakfast");
   const [selectedAmenities, setSelectedAmenities] = useState([]);
   const [checkIn] = useState(todayStr());
@@ -100,7 +69,6 @@ export default function BusyAnalyticsDashboard() {
   const [, setGuestSchedule] = useState([]);
   const [view, setView] = useState("landing");
   const [showConsentModal, setShowConsentModal] = useState(false);
-  const [activeFeatureTab, setActiveFeatureTab] = useState("property");
 
   useEffect(() => {
     async function loadInitialData() {
@@ -110,10 +78,10 @@ export default function BusyAnalyticsDashboard() {
       setAmenityTypes(loadedAmenityTypes);
       setSelectedAmenities(loadedAmenityTypes);
       setAmenity(loadedAmenityTypes.includes("Free Breakfast") ? "Free Breakfast" : loadedAmenityTypes[0] || "");
-      setGuestSchedule((await fetchGuestSchedule(GUEST_ID)) || []);
+      setGuestSchedule((await fetchGuestSchedule(guestId)) || []);
     }
     loadInitialData().catch(console.error);
-  }, [propertyId]);
+  }, [propertyId, guestId]);
 
   const selectedProperty = useMemo(
     () => properties.find((property) => property.id === propertyId),
@@ -121,35 +89,20 @@ export default function BusyAnalyticsDashboard() {
   );
 
   const tripPropertyName = selectedProperty?.name || DEFAULT_HOTEL_NAME;
-  const featuredItems = activeFeatureTab === "hotel"
-    ? HOTEL_SERVICES_ONSITE
-    : activeFeatureTab === "room"
-      ? ROOM_AMENITIES_ONSITE
-      : activeFeatureTab === "all"
-        ? [...PROPERTY_AMENITIES_ONSITE, ...ROOM_AMENITIES_ONSITE, ...HOTEL_SERVICES_ONSITE]
-        : PROPERTY_AMENITIES_ONSITE;
-  const featuredTitle = activeFeatureTab === "hotel"
-    ? "Hotel Services On-Site"
-    : activeFeatureTab === "room"
-      ? "Room Amenities On-Site"
-      : activeFeatureTab === "all"
-        ? "All Amenities & Services On-Site"
-        : "Property Amenities On-Site";
+
 
   const selectedAmenityList = selectedAmenities.length ? selectedAmenities : amenityTypes;
   const analyticsEntries = Object.entries(analyticsByAmenity);
   const chartDataFor = (slots) => slots.map((slot) => ({
     label: slot.time_slot,
     date: slot.date,
-    busyScore: slot.busy_score,
-    demandScore: slot.demand_score,
-    futureBusy: slot.future_busy,
+    statusScore: slot.busy_score,
     slot,
   }));
 
   const loadSchedule = useCallback(async () => {
-    setGuestSchedule((await fetchGuestSchedule(GUEST_ID)) || []);
-  }, []);
+    setGuestSchedule((await fetchGuestSchedule(guestId)) || []);
+  }, [guestId]);
 
   const loadAnalytics = useCallback(async (clearMessage = true) => {
     const amenitiesToLoad = selectedAmenityList.filter(Boolean);
@@ -179,7 +132,7 @@ export default function BusyAnalyticsDashboard() {
 
   const handleCheckIn = async () => {
     const guest = await checkInGuest({
-      guest_id: GUEST_ID,
+      guest_id: guestId,
       guest_name: guestName,
       property_id: propertyId,
       check_in: checkIn,
@@ -193,7 +146,7 @@ export default function BusyAnalyticsDashboard() {
   const handlePlanToggle = async (enabled) => {
     const selected = selectedAmenities.length ? selectedAmenities : amenityTypes;
     const guest = await saveGuestConsent({
-      guest_id: GUEST_ID,
+      guest_id: guestId,
       property_id: propertyId,
       plan_your_stay_enabled: enabled,
       selected_amenities: selected,
@@ -216,7 +169,7 @@ export default function BusyAnalyticsDashboard() {
 
   const handleEvent = async (slotId, eventType) => {
     try {
-      const result = await postEvent(propertyId, slotId, eventType, GUEST_ID);
+      const result = await postEvent(propertyId, slotId, eventType, guestId);
       setActionStates((current) => ({
         ...current,
         [slotId]: eventType === "RESERVE"
@@ -344,33 +297,6 @@ export default function BusyAnalyticsDashboard() {
           </section>
         ) : (
           <>
-            <section className="featured-amenities-section enterprise-card">
-              <div className="featured-heading">
-                <span className="eyebrow">{tripPropertyName}</span>
-                <h2>Featured Amenities On-Site</h2>
-              </div>
-              <div className="featured-tabs" role="tablist" aria-label="Featured amenities categories">
-                {FEATURED_AMENITY_TABS.map((tab) => (
-                  <button key={tab.id} className={activeFeatureTab === tab.id ? "active" : ""} onClick={() => setActiveFeatureTab(tab.id)} role="tab" aria-selected={activeFeatureTab === tab.id}>
-                    {tab.label} ({tab.count})
-                  </button>
-                ))}
-              </div>
-              <div className="featured-section-title-row"><h3>{featuredTitle}</h3><span>⊙ included amenities (3)</span></div>
-              <div className="featured-amenities-grid">
-                {featuredItems.map((item) => {
-                  const mappedAmenity = item.amenity;
-                  const selected = mappedAmenity && selectedAmenities.includes(mappedAmenity);
-                  return (
-                    <button type="button" key={`${activeFeatureTab}-${item.name}`} className={`featured-amenity-item ${selected ? "selected" : ""}`} onClick={() => mappedAmenity && toggleAmenityFilter(mappedAmenity)} disabled={!mappedAmenity}>
-                      <span className="featured-icon">{item.icon}</span>
-                      <span className="featured-copy"><strong>{item.name} {mappedAmenity ? "⊙" : ""}</strong>{item.detail && <small>{item.detail}</small>}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
-
             <section className="enterprise-toolbar enterprise-card multi-amenity-toolbar">
               <div className="stay-range-inline">
                 <span>Checkin Date:</span><strong>{checkIn}</strong>
@@ -419,7 +345,7 @@ export default function BusyAnalyticsDashboard() {
                         textAnchor="end"
                         height={72}
                       />
-                      <YAxis domain={[0, 1.5]} />
+                      <YAxis domain={[0, 1]} />
                       <Tooltip
                         formatter={(value, name) => [typeof value === "number" ? value.toFixed(2) : value, name]}
                         labelFormatter={(_label, payload) => {
@@ -427,11 +353,8 @@ export default function BusyAnalyticsDashboard() {
                           return slot ? `${slot.date} · ${slot.time_slot}` : _label;
                         }}
                       />
-                      <Legend />
-                      <Bar dataKey="busyScore" name="Busy" fill="#1f6f9f" cursor="pointer" isAnimationActive={false} onClick={(data) => data?.slot && setSelectedSlotsByAmenity((current) => ({ ...current, [amenityName]: data.slot }))} />
-                      <Bar dataKey="demandScore" name="Demand" fill="#8b6f47" cursor="pointer" isAnimationActive={false} onClick={(data) => data?.slot && setSelectedSlotsByAmenity((current) => ({ ...current, [amenityName]: data.slot }))} />
-                      <Bar dataKey="futureBusy" name="Forecast" fill="#556b58" cursor="pointer" isAnimationActive={false} onClick={(data) => data?.slot && setSelectedSlotsByAmenity((current) => ({ ...current, [amenityName]: data.slot }))}>
-                        {chartDataFor(rows).map((entry, index) => <Cell key={`${entry.date}-${entry.label}-${index}`} fill={busyColor(entry.futureBusy)} />)}
+                      <Bar dataKey="statusScore" name="Slot Status" cursor="pointer" isAnimationActive={false} onClick={(data) => data?.slot && setSelectedSlotsByAmenity((current) => ({ ...current, [amenityName]: data.slot }))}>
+                        {chartDataFor(rows).map((entry, index) => <Cell key={`${entry.date}-${entry.label}-${index}`} fill={busyColor(entry.statusScore)} />)}
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>
