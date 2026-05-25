@@ -1,20 +1,22 @@
 """LightGBM-backed future busy prediction for amenity slots.
 
-The model trains from the supplied 60-day CSV when available locally. Otherwise it
+The model trains from the canonical 60-day JSON when available locally. Otherwise it
 uses the in-memory historical fixture so cloud agents and demos remain runnable.
 Features include busy, demand, weather, traffic, time of day, day of week, and
 amenity identity.
 """
 
 import csv
+import json
 import os
 from pathlib import Path
 
 from data.mock_slots import TIME_SLOTS, get_historical_busy_data
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
+CANONICAL_DATASET = REPO_ROOT / "hotel-amenity-busy-analytics/backend/data/hotel_amenity_large_dataset_60days_weather_traffic.canonical.json"
 SOURCE_DATASET_CANDIDATES = [
-    REPO_ROOT / "hotel-amenity-busy-analytics/backend/data/hotel_amenity_large_dataset_60days_weather_traffic.xlsx"
+    CANONICAL_DATASET
 ]
 
 
@@ -142,6 +144,11 @@ def _source_rows() -> list[dict]:
         return _SOURCE_ROWS_CACHE
     if not SOURCE_DATASET.exists():
         _SOURCE_ROWS_CACHE = []
+        return _SOURCE_ROWS_CACHE
+    if SOURCE_DATASET.suffix.lower() == ".json":
+        with SOURCE_DATASET.open() as handle:
+            payload = json.load(handle)
+        _SOURCE_ROWS_CACHE = payload.get("records", [])
         return _SOURCE_ROWS_CACHE
     if SOURCE_DATASET.suffix.lower() in {".xlsx", ".xslx"}:
         from openpyxl import load_workbook

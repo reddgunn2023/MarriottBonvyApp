@@ -1,11 +1,11 @@
 """Runtime CSV datasets and event logs for amenity/service verification.
 
-When the user-provided large CSV exists locally, it is normalized into per-amenity
-CSV files. In cloud/dev environments where that absolute path is unavailable, the
-service generates deterministic one-month fallback CSVs so the app remains runnable.
+The canonical JSON dataset is normalized into per-amenity runtime CSV files.
+Fallback generated rows are only used if the canonical dataset is unavailable.
 """
 
 import csv
+import json
 import os
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
@@ -14,8 +14,9 @@ from data.mock_slots import AMENITY_COLLECTIONS, TIME_SLOTS
 from services.score_service import calculate_busy_score, calculate_demand_score
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
+CANONICAL_DATASET = REPO_ROOT / "hotel-amenity-busy-analytics/backend/data/hotel_amenity_large_dataset_60days_weather_traffic.canonical.json"
 SOURCE_DATASET_CANDIDATES = [
-    REPO_ROOT / "hotel-amenity-busy-analytics/backend/data/hotel_amenity_large_dataset_60days_weather_traffic.xlsx"
+    CANONICAL_DATASET
 ]
 
 
@@ -328,6 +329,11 @@ def _source_rows() -> list[dict]:
         return _SOURCE_ROWS_CACHE
     if not SOURCE_DATASET.exists():
         _SOURCE_ROWS_CACHE = []
+        return _SOURCE_ROWS_CACHE
+    if SOURCE_DATASET.suffix.lower() == ".json":
+        with SOURCE_DATASET.open() as handle:
+            payload = json.load(handle)
+        _SOURCE_ROWS_CACHE = payload.get("records", [])
         return _SOURCE_ROWS_CACHE
     if SOURCE_DATASET.suffix.lower() in {".xlsx", ".xslx"}:
         from openpyxl import load_workbook
