@@ -17,23 +17,21 @@ def get_recommendations(
     amenity: str,
     top_n: int = 5,
 ) -> list[dict]:
-    """
-    Return the top-N least-busy slots for the requested amenity.
-    Each recommendation includes a human-readable reason.
-    """
+    """Return the top-N least-busy slots for the requested amenity."""
     enriched = get_busy_analytics(slots, amenity)
     available_slots = [s for s in enriched if s["available"] > 0]
-    available_slots.sort(key=lambda s: s["busyScore"])
+    available_slots.sort(key=lambda s: (s["futureBusy"], s["busyScore"]))
 
     recommendations = []
     for slot in available_slots[:top_n]:
         pct_free = round((slot["available"] / slot["capacity"]) * 100)
-        if slot["busyScore"] <= 0.3:
-            reason = f"Low demand — {pct_free}% availability"
-        elif slot["busyScore"] <= 0.6:
-            reason = f"Moderate demand — {pct_free}% availability"
+        future_pct = round(slot["futureBusy"] * 100)
+        if slot["futureBusy"] <= 0.3:
+            reason = f"Predicted calm window - {pct_free}% availability, future busy {future_pct}%"
+        elif slot["futureBusy"] <= 0.6:
+            reason = f"Moderate predicted demand - {pct_free}% availability"
         else:
-            reason = f"Filling up but {slot['available']} spot(s) left"
+            reason = f"Likely to fill soon but {slot['available']} spot(s) left"
 
         recommendations.append(
             {
@@ -42,6 +40,7 @@ def get_recommendations(
                 "timeSlot": slot["timeSlot"],
                 "reason": reason,
                 "busyScore": slot["busyScore"],
+                "futureBusy": slot["futureBusy"],
                 "available": slot["available"],
             }
         )

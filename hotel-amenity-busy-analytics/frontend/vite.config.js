@@ -7,6 +7,7 @@ export default defineConfig({
     port: 5173,
     proxy: {
       "/amenities": "http://localhost:8000",
+      "/guests": "http://localhost:8000",
     },
   },
 });
