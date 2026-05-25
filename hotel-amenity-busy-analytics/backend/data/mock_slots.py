@@ -440,10 +440,17 @@ def is_severe_weather_window(day: date, time_index: int) -> bool:
     return day.day in {5, 12, 19, 26} and time_index in {2, 3, 4}
 
 
+def _historical_variance(current_date: date, time_index: int, amenity_id: str) -> float:
+    """Small deterministic variance so historical mock rows are not identical."""
+    seed = (current_date.toordinal() + time_index * 7 + len(amenity_id) * 13) % 9
+    return (seed - 4) * 0.025
+
+
 def _generate_slots_for_range(
     property_id: str,
     start_date: date,
     num_days: int,
+    historical: bool = False,
 ) -> list[dict]:
     """Generate slot data for every property-enabled amenity across a date range."""
     slots = []
@@ -460,6 +467,8 @@ def _generate_slots_for_range(
                 base_occupancy = patterns[idx]
                 if is_weekend:
                     base_occupancy = min(1.0, base_occupancy + _WEEKEND_BOOST)
+                if historical:
+                    base_occupancy = max(0.0, min(1.0, base_occupancy + _historical_variance(current_date, idx, amenity["id"])))
 
                 weather_condition = weather_condition_for(current_date, idx, amenity["name"])
                 traffic_condition = traffic_condition_for(current_date, idx)
@@ -497,9 +506,21 @@ def _generate_slots_for_range(
                         "indoorWeatherBoost": indoor_weather_boost,
                         "trafficCondition": traffic_condition,
                         "status": status,
+                        "historical": historical,
                     }
                 )
     return slots
+
+
+def get_mock_historical_slots(
+    property_id: str = "prop-001",
+    days: int = 90,
+    anchor_date: date | None = None,
+) -> list[dict]:
+    """Return 90 days of historical mock slots ending before anchor_date."""
+    anchor = anchor_date or date.today()
+    start = anchor - timedelta(days=days)
+    return copy.deepcopy(_generate_slots_for_range(property_id, start, days, historical=True))
 
 
 def get_mock_slots(
