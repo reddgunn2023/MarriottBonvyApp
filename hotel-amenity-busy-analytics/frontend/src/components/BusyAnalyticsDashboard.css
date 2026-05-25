@@ -2038,3 +2038,56 @@ input {
     justify-self: start;
   }
 }
+
+
+/* Forecast details and analytics request states */
+.analytics-loading-state,
+.analytics-empty-state {
+  display: grid;
+  gap: 8px;
+  margin: 22px 0;
+  padding: 22px;
+}
+
+.analytics-loading-state strong,
+.analytics-empty-state strong {
+  color: #2c241d;
+  font-size: 1.1rem;
+}
+
+.analytics-loading-state p,
+.analytics-empty-state p {
+  color: #665c52;
+  line-height: 1.5;
+}
+
+.analytics-empty-state code {
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: #f7f3ee;
+}
+
+.forecast-detail-note {
+  grid-column: 1 / -1;
+  padding: 14px 16px;
+  border: 1px solid #dbe6dd;
+  border-radius: 12px;
+  background: #f5fbf6;
+}
+
+.forecast-detail-note strong {
+  color: #2e5f38;
+}
+
+.forecast-detail-note p {
+  margin-top: 6px;
+  color: #2c241d;
+  font-weight: 700;
+}
+
+.forecast-detail-note small {
+  display: block;
+  margin-top: 6px;
+  color: #665c52;
+  line-height: 1.5;
+}

@@ -45,6 +45,17 @@ function scoreLevel(score) {
   return "Low";
 }
 
+function forecastSummary(slot) {
+  const level = scoreLevel(slot.future_busy);
+  if (level === "High") {
+    return "High forecast: expect heavier usage. Consider alternate times or join the waiting line if full.";
+  }
+  if (level === "Moderate") {
+    return "Moderate forecast: this slot is usable, but demand may build as the stay window approaches.";
+  }
+  return "Low forecast: recommended as a calmer planning window.";
+}
+
 function formatTimeSlot(slot) {
   return slot.replace(/\b0(\d):/g, "$1:").replace(/:/g, ".");
 }
@@ -107,7 +118,7 @@ export default function BusyAnalyticsDashboard() {
   const chartDataFor = (slots) => slots.map((slot) => ({
     label: formatTimeSlot(slot.time_slot),
     date: slot.date,
-    statusScore: slot.busy_score,
+    statusScore: Math.max(slot.busy_score, 0.04),
     slot,
   }));
 
@@ -119,7 +130,12 @@ export default function BusyAnalyticsDashboard() {
     const amenitiesToLoad = selectedAmenityList.filter(Boolean);
     if (!amenitiesToLoad.length) return;
     setLoading(true);
-    if (clearMessage) setEventMessage("");
+    if (clearMessage) {
+      setEventMessage("");
+      setAnalyticsByAmenity({});
+      setRecommendationsByAmenity({});
+      setSelectedSlotsByAmenity({});
+    }
     try {
       const results = await Promise.all(
         amenitiesToLoad.map(async (item) => {
@@ -333,7 +349,21 @@ export default function BusyAnalyticsDashboard() {
               <button className="black-btn" onClick={() => loadAnalytics()} disabled={!selectedAmenityList.length || loading}>{loading ? "Loading" : "View Analytics"}</button>
             </section>
 
-            {analyticsEntries.length > 0 && analyticsEntries.map(([amenityName, rows]) => (
+            {loading && (
+              <section className="enterprise-card analytics-loading-state">
+                <strong>Loading analytics...</strong>
+                <p>Preparing workbook-backed 30-minute metrics, demand, weather, traffic, and forecast details.</p>
+              </section>
+            )}
+
+            {!loading && analyticsEntries.length === 0 && eventMessage && (
+              <section className="enterprise-card analytics-empty-state">
+                <strong>{eventMessage}</strong>
+                <p>If this remains blank, confirm the URL uses a valid property such as <code>/MARRIOTT101/your-user</code>.</p>
+              </section>
+            )}
+
+            {!loading && analyticsEntries.length > 0 && analyticsEntries.map(([amenityName, rows]) => (
               <section className="enterprise-card analytics-workspace" key={amenityName}>
                 <div className="analytics-heading"><div><span className="eyebrow">Stay Range Metrics</span><h2>{amenityName}</h2><p>Busy and demand metrics are shown in 30-minute intervals from check-in to checkout.</p></div></div>
                 <div className="enterprise-chart-frame">
@@ -382,11 +412,17 @@ export default function BusyAnalyticsDashboard() {
                     <dl>
                       <div><dt>Busy</dt><dd>{scoreLevel(selectedSlotsByAmenity[amenityName].busy_score)}</dd></div>
                       <div><dt>Demand</dt><dd>{scoreLevel(selectedSlotsByAmenity[amenityName].demand_score)}</dd></div>
+                      <div><dt>Forecast</dt><dd>{scoreLevel(selectedSlotsByAmenity[amenityName].future_busy)}</dd></div>
                       <div><dt>Weather</dt><dd>{selectedSlotsByAmenity[amenityName].weather_condition || "Clear"}</dd></div>
                       <div><dt>Traffic</dt><dd>{selectedSlotsByAmenity[amenityName].traffic_condition || "Light"}</dd></div>
                       <div><dt>Availability</dt><dd>{selectedSlotsByAmenity[amenityName].available <= 0 ? "Full" : `${selectedSlotsByAmenity[amenityName].available} open`}</dd></div>
                     </dl>
                     <div className="slot-detail-actions">{slotAction(selectedSlotsByAmenity[amenityName])}</div>
+                    <div className="forecast-detail-note">
+                      <strong>Forecast details</strong>
+                      <p>{forecastSummary(selectedSlotsByAmenity[amenityName])}</p>
+                      <small>Signals: busy {selectedSlotsByAmenity[amenityName].busy_score.toFixed(2)}, demand {selectedSlotsByAmenity[amenityName].demand_score.toFixed(2)}, weather {selectedSlotsByAmenity[amenityName].weather_condition || "clear"}, traffic {selectedSlotsByAmenity[amenityName].traffic_condition || "light"}.</small>
+                    </div>
                   </div>
                 ) : (
                   <div className="slot-detail-empty">Click a bar to view that 30-minute slot and choose Reserve, Cancel, or Join Waiting Line.</div>
