@@ -86,7 +86,7 @@ export default function BusyAnalyticsDashboard() {
       return;
     }
     try {
-      const result = await postEvent(selectedSlot, eventType);
+      const result = await postEvent(propertyId, selectedSlot, eventType);
       setEventMessage(result.message);
       await loadAnalytics();
     } catch (err) {

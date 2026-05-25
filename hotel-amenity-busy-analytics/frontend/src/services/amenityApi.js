@@ -53,8 +53,14 @@ export async function fetchRecommendations(
   return res.data;
 }
 
-export async function postEvent(slotId, eventType, guestId = "guest-default") {
+export async function postEvent(
+  propertyId,
+  slotId,
+  eventType,
+  guestId = "guest-default",
+) {
   const res = await axios.post(`${API_BASE}/event`, {
+    property_id: propertyId,
     slot_id: slotId,
     event_type: eventType,
     guest_id: guestId,

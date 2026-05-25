@@ -4,6 +4,7 @@ from pydantic import BaseModel
 
 
 class EventRequest(BaseModel):
+    property_id: str
     slot_id: str
     event_type: str  # RESERVE | CANCEL | WAITLIST
     guest_id: str = "guest-default"

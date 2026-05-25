@@ -15,6 +15,7 @@ from models import (
 )
 from data.mock_slots import PROPERTIES, AMENITIES
 from services.booking_service import (
+    ensure_loaded_for_range,
     get_all_slots,
     reload_slots,
     reserve,
@@ -68,7 +69,7 @@ def get_availability(
 @app.post("/amenities/event", response_model=EventResponse)
 def handle_event(req: EventRequest):
     """Reserve, cancel, or join the waitlist for a slot."""
-    property_id = req.slot_id.rsplit("-", 3)[0] if "-" in req.slot_id else "prop-001"
+    property_id = req.property_id
 
     event_type = req.event_type.upper()
     if event_type == "RESERVE":
@@ -105,7 +106,7 @@ def handle_event(req: EventRequest):
 @app.post("/amenities/busy-analytics", response_model=BusyAnalyticsResponse)
 def busy_analytics(req: BusyAnalyticsRequest):
     """Show busy analytics for a specific amenity during the stay."""
-    reload_slots(req.property_id, req.check_in, req.check_out)
+    ensure_loaded_for_range(req.property_id, req.check_in, req.check_out)
     slots = get_all_slots(req.property_id)
     analytics = get_busy_analytics(slots, req.amenity)
 
@@ -134,7 +135,7 @@ def busy_analytics(req: BusyAnalyticsRequest):
 @app.post("/amenities/recommendations", response_model=RecommendationResponse)
 def recommendations(req: RecommendationRequest):
     """Show smart recommendations for the best available times."""
-    reload_slots(req.property_id, req.check_in, req.check_out)
+    ensure_loaded_for_range(req.property_id, req.check_in, req.check_out)
     slots = get_all_slots(req.property_id)
     recs = get_recommendations(slots, req.amenity)
 

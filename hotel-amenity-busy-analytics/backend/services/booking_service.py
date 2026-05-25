@@ -3,13 +3,27 @@
 from data.mock_slots import get_mock_slots
 
 _active_slots: dict[str, list[dict]] = {}
+_loaded_ranges: dict[str, tuple[str, str]] = {}
 
 
 def _ensure_loaded(property_id: str, check_in: str, check_out: str) -> list[dict]:
     """Lazily load slots for a property into the in-memory store."""
     if property_id not in _active_slots:
         _active_slots[property_id] = get_mock_slots(property_id, check_in, check_out)
+        _loaded_ranges[property_id] = (check_in, check_out)
     return _active_slots[property_id]
+
+
+def ensure_loaded_for_range(
+    property_id: str,
+    check_in: str,
+    check_out: str,
+) -> list[dict]:
+    """Load slots only if not already loaded or if the date range changed."""
+    current = _loaded_ranges.get(property_id)
+    if current and current == (check_in, check_out) and property_id in _active_slots:
+        return _active_slots[property_id]
+    return reload_slots(property_id, check_in, check_out)
 
 
 def get_all_slots(
@@ -116,4 +130,5 @@ def reload_slots(
 ) -> list[dict]:
     """Force-reload slots (useful after date-range change)."""
     _active_slots[property_id] = get_mock_slots(property_id, check_in, check_out)
+    _loaded_ranges[property_id] = (check_in, check_out)
     return _active_slots[property_id]
