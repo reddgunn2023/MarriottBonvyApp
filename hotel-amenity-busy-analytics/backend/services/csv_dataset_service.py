@@ -15,14 +15,7 @@ from services.score_service import calculate_busy_score, calculate_demand_score
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 SOURCE_DATASET_CANDIDATES = [
-    REPO_ROOT / "hotel-amenity-busy-analytics/backend/data/hotel_amenity_large_dataset_60days_weather_traffic.xlsx",
-    REPO_ROOT / "hotel-amenity-busy-analytics/backend/src/data/hotel_amenity_large_dataset_60days_weather_traffic.xlsx",
-    REPO_ROOT / "src/data/hotel_amenity_large_dataset_60days_weather_traffic.xlsx",
-    REPO_ROOT / "src/data/hotel_amenity_large_dataset_60days_weather_traffic.xslx",
-    REPO_ROOT / "src/data/hotel_amenity_large_dataset_60days.csv",
-    REPO_ROOT / "hotel-amenity-busy-analytics/src/data/hotel_amenity_large_dataset_60days.csv",
-    Path("/Users/sgunn825/Documents/hotel_amenity_large_dataset_60days_weather_traffic.xlsx"),
-    Path("/Users/sgunn825/Documents/hotel_amenity_large_dataset_60days.csv"),
+    REPO_ROOT / "hotel-amenity-busy-analytics/backend/data/hotel_amenity_large_dataset_60days_weather_traffic.xlsx"
 ]
 
 
