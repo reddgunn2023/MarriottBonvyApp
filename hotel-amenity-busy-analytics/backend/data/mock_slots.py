@@ -114,6 +114,56 @@ AMENITY_COLLECTIONS = [
     },
 ]
 
+OPEN_HOURS_BY_AMENITY = {
+    "golf": {
+        "monday_friday": "6:00 AM-6:00 PM",
+        "saturday_sunday": "6:00 AM-6:00 PM",
+    },
+    "spa": {
+        "monday_friday": "9:00 AM-8:00 PM",
+        "saturday_sunday": "9:00 AM-8:00 PM",
+    },
+    "fitness-center": {
+        "monday_friday": "5:00 AM-11:00 PM",
+        "saturday_sunday": "5:00 AM-11:00 PM",
+    },
+    "pool": {
+        "monday_friday": "7:00 AM-10:00 PM",
+        "saturday_sunday": "7:00 AM-10:00 PM",
+    },
+    "free-breakfast": {
+        "monday_friday": "6:30 AM-9:30 AM",
+        "saturday_sunday": "7:00 AM-10:00 AM",
+    },
+    "whirlpool-onsite": {
+        "monday_friday": "7:00 AM-10:00 PM",
+        "saturday_sunday": "7:00 AM-10:00 PM",
+    },
+    "restaurants": {
+        "monday_friday": "6:30 AM-11:00 PM",
+        "saturday_sunday": "6:30 AM-11:00 PM",
+    },
+    "lounges": {
+        "monday_friday": "4:00 PM-11:30 PM",
+        "saturday_sunday": "4:00 PM-11:30 PM",
+    },
+    "tennis": {
+        "monday_friday": "6:00 AM-10:00 PM",
+        "saturday_sunday": "6:00 AM-10:00 PM",
+    },
+    "cabanas": {
+        "monday_friday": "9:00 AM-6:00 PM",
+        "saturday_sunday": "9:00 AM-6:00 PM",
+    },
+    "ev-charging": {
+        "monday_friday": "12:00 AM-11:59 PM",
+        "saturday_sunday": "12:00 AM-11:59 PM",
+    },
+}
+
+for amenity in AMENITY_COLLECTIONS:
+    amenity["openHours"] = OPEN_HOURS_BY_AMENITY[amenity["id"]]
+
 _AMENITY_BY_NAME = {amenity["name"]: amenity for amenity in AMENITY_COLLECTIONS}
 AMENITIES = [amenity["name"] for amenity in AMENITY_COLLECTIONS]
 
@@ -275,7 +325,7 @@ def _time_to_minutes(value: str) -> int:
 
 
 def _hours_for_date(amenity: dict, current_date: date) -> dict | None:
-    hours = amenity.get("hours")
+    hours = amenity.get("openHours") or amenity.get("hours")
     if not hours:
         return None
     if current_date.weekday() >= 5:
