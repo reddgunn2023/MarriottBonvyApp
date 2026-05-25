@@ -182,6 +182,8 @@ def _slot_score_model(slot: dict) -> SlotScore:
         booked=slot["booked"],
         available=slot["available"],
         waitlist_count=slot.get("waitlist", 0),
+        weather_condition=slot.get("weatherCondition", "clear"),
+        traffic_condition=slot.get("trafficCondition", "light"),
         status=slot["status"],
     )
 

@@ -1570,3 +1570,303 @@ input {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Enterprise Marriott dashboard cleanup */
+.enterprise-page {
+  min-height: 100vh;
+  background: #f5f3ef;
+  color: #1f1f1f;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.enterprise-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 72px;
+  padding: 0 48px;
+  border-bottom: 1px solid #ddd7cf;
+  background: #fff;
+}
+
+.enterprise-brand {
+  display: grid;
+  gap: 3px;
+  text-align: right;
+}
+
+.enterprise-brand span {
+  color: #666;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.enterprise-brand strong {
+  font-size: 1rem;
+}
+
+.enterprise-main {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 34px 24px 80px;
+}
+
+.enterprise-property-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 28px;
+  align-items: end;
+  margin-bottom: 24px;
+}
+
+.enterprise-property-header h1 {
+  max-width: 880px;
+  margin: 8px 0 12px;
+  color: #2c241d;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2.5rem, 5vw, 5.2rem);
+  font-weight: 500;
+  line-height: 0.98;
+}
+
+.enterprise-property-header p {
+  max-width: 720px;
+  color: #5f5a55;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.enterprise-stay-panel,
+.enterprise-card,
+.enterprise-checkin-panel,
+.enterprise-enable-panel {
+  border: 1px solid #ded8cf;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 12px 30px rgba(31, 27, 23, 0.07);
+}
+
+.enterprise-stay-panel {
+  display: grid;
+  gap: 6px;
+  padding: 22px;
+}
+
+.enterprise-stay-panel span,
+.stay-range-inline span {
+  color: #8b6f47;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.enterprise-stay-panel strong,
+.stay-range-inline strong {
+  color: #24201c;
+  font-size: 1.05rem;
+}
+
+.enterprise-stay-panel small {
+  color: #5f7662;
+  font-weight: 800;
+}
+
+.enterprise-checkin-panel,
+.enterprise-enable-panel {
+  display: flex;
+  gap: 18px;
+  align-items: end;
+  margin-bottom: 24px;
+  padding: 24px;
+}
+
+.enterprise-checkin-panel .control-group {
+  flex: 1;
+  max-width: 420px;
+}
+
+.enterprise-enable-panel {
+  align-items: center;
+  justify-content: space-between;
+}
+
+.enterprise-enable-panel h2 {
+  margin-bottom: 6px;
+  font-size: 1.5rem;
+}
+
+.enterprise-enable-panel p {
+  color: #666;
+}
+
+.enterprise-consent-card {
+  min-height: 0;
+  padding: 48px;
+  border: 1px solid #d8d1c8;
+  border-radius: 18px;
+  background: #fff;
+  color: #24201c;
+}
+
+.enterprise-consent-card h3 {
+  margin-bottom: 14px;
+  font-size: 1.8rem;
+}
+
+.enterprise-consent-card p {
+  max-width: 560px;
+  color: #555;
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+.modal-actions {
+  margin-top: 24px;
+}
+
+.enterprise-toolbar {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.8fr) minmax(280px, 1fr) auto;
+  gap: 18px;
+  align-items: end;
+  margin: 22px 0;
+  padding: 22px;
+}
+
+.stay-range-inline {
+  display: grid;
+  min-height: 52px;
+  align-content: center;
+  gap: 4px;
+  padding: 0 16px;
+  border: 1px solid #ded8cf;
+  border-radius: 12px;
+  background: #faf8f5;
+}
+
+.analytics-workspace,
+.smart-recommendations-panel,
+.featured-amenities-section.enterprise-card {
+  padding: 28px;
+  margin-bottom: 22px;
+}
+
+.featured-amenities-section.enterprise-card {
+  border-radius: 18px;
+}
+
+.analytics-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 18px;
+}
+
+.analytics-heading h2,
+.smart-recommendations-panel h2 {
+  margin: 6px 0;
+  color: #2c241d;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 2rem;
+  font-weight: 500;
+}
+
+.analytics-heading p {
+  color: #666;
+}
+
+.enterprise-chart-frame {
+  padding: 18px;
+  border: 1px solid #e3ddd5;
+  border-radius: 14px;
+  background: #fffdf9;
+}
+
+.metrics-table-wrap {
+  max-height: 540px;
+  margin-top: 22px;
+  overflow: auto;
+  border: 1px solid #e3ddd5;
+  border-radius: 14px;
+}
+
+.metrics-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.86rem;
+}
+
+.metrics-table th,
+.metrics-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #ece7df;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.metrics-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #f7f3ee;
+  color: #5e5144;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.table-action {
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid #1f1f1f;
+  border-radius: 999px;
+  background: #fff;
+  color: #1f1f1f;
+  cursor: pointer;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.enterprise-event-msg {
+  display: inline-block;
+}
+
+.enterprise-rec-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.enterprise-rec-list article {
+  padding: 18px;
+  border: 1px solid #e3ddd5;
+  border-radius: 14px;
+  background: #fffdf9;
+}
+
+.enterprise-rec-list strong {
+  color: #2c241d;
+}
+
+.enterprise-rec-list p {
+  margin-top: 8px;
+  color: #555;
+  line-height: 1.5;
+}
+
+@media (max-width: 900px) {
+  .enterprise-property-header,
+  .enterprise-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .enterprise-checkin-panel,
+  .enterprise-enable-panel {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
