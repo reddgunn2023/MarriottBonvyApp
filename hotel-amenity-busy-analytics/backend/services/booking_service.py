@@ -2,7 +2,8 @@
 
 import logging
 
-from services.csv_dataset_service import get_slots_from_datasets, update_dataset_for_event
+from data.mock_slots import get_mock_slots
+from services.csv_dataset_service import update_dataset_for_event
 from services.score_service import recalculate_slot_scores
 
 _active_slots: dict[str, list[dict]] = {}
@@ -14,7 +15,7 @@ logger = logging.getLogger("uvicorn.error")
 def _ensure_loaded(property_id: str, check_in: str, check_out: str) -> list[dict]:
     """Lazily load slots for a property into the in-memory store."""
     if property_id not in _active_slots:
-        _active_slots[property_id] = get_slots_from_datasets(property_id, check_in, check_out)
+        _active_slots[property_id] = get_mock_slots(property_id, check_in, check_out)
         _loaded_ranges[property_id] = (check_in, check_out)
     return _active_slots[property_id]
 
@@ -234,6 +235,6 @@ def reload_slots(
     check_out: str,
 ) -> list[dict]:
     """Force-reload slots when the date range changes."""
-    _active_slots[property_id] = get_slots_from_datasets(property_id, check_in, check_out)
+    _active_slots[property_id] = get_mock_slots(property_id, check_in, check_out)
     _loaded_ranges[property_id] = (check_in, check_out)
     return _active_slots[property_id]

@@ -55,18 +55,6 @@ def root():
 
 @app.get("/amenities/properties")
 def list_properties():
-    dataset_props = dataset_properties()
-    if dataset_props:
-        return {
-            "properties": [
-                {
-                    **prop,
-                    "amenities": dataset_property_amenities(prop["id"]),
-                }
-                for prop in dataset_props
-            ]
-        }
-
     properties = []
     for prop in PROPERTIES:
         properties.append(
@@ -85,41 +73,17 @@ def list_catalog():
 
 @app.get("/amenities/types")
 def list_amenity_types(property_id: str | None = Query(default=None)):
-    dataset_props = dataset_properties()
-    requested_property_id = property_id or (dataset_props[0]["id"] if dataset_props else None)
-    active_property_id = canonical_property_id(requested_property_id) if requested_property_id else None
-
-    if active_property_id:
-        dataset_amenities = dataset_property_amenities(active_property_id)
-        property_record = next((prop for prop in dataset_props if prop["id"] == active_property_id), None)
-        if dataset_amenities:
-            return {
-                "property_id": active_property_id,
-                "property": property_record,
-                "date_range": dataset_property_date_range(active_property_id),
-                "amenities": [amenity["name"] for amenity in dataset_amenities],
-                "amenity_details": dataset_amenities,
-                "services": property_record.get("services", []) if property_record else [],
-            }
-        return {
-            "property_id": active_property_id,
-            "property": property_record,
-            "date_range": dataset_property_date_range(active_property_id),
-            "amenities": [amenity["name"] for amenity in get_property_amenities(active_property_id)],
-            "amenity_details": get_property_amenities(active_property_id),
-            "services": property_record.get("services", []) if property_record else [],
-        }
-
+    active_property_id = property_id or "prop-001"
+    property_record = next((prop for prop in PROPERTIES if prop["id"] == active_property_id), PROPERTIES[0])
+    amenities = get_property_amenities(property_record["id"])
     return {
-        "property_id": None,
-        "property": None,
+        "property_id": property_record["id"],
+        "property": property_record,
         "date_range": {"check_in": None, "check_out": None},
-        "amenities": AMENITIES,
-        "amenity_details": [],
-        "services": [],
+        "amenities": [amenity["name"] for amenity in amenities],
+        "amenity_details": amenities,
+        "services": property_record.get("services", []),
     }
-
-
 
 
 @app.get("/amenities/datasets")

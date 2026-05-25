@@ -65,7 +65,7 @@ function routeContext() {
     .split("/")
     .filter(Boolean);
   return {
-    propertyId: propertyFromPath || "MARRIOTT101",
+    propertyId: propertyFromPath || "prop-001",
     guestId: userFromPath || "guest-default",
   };
 }
