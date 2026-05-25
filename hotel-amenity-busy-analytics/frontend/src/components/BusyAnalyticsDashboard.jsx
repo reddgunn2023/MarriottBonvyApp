@@ -131,23 +131,27 @@ export default function BusyAnalyticsDashboard() {
     if (!amenitiesToLoad.length) return;
     setLoading(true);
     if (clearMessage) {
-      setEventMessage("");
+      setEventMessage("Preparing analytics...");
       setAnalyticsByAmenity({});
       setRecommendationsByAmenity({});
       setSelectedSlotsByAmenity({});
     }
     try {
-      const results = await Promise.all(
-        amenitiesToLoad.map(async (item) => {
-          const [analyticsData, recData] = await Promise.all([
-            fetchBusyAnalytics(propertyId, item, checkIn, checkOut),
-            fetchRecommendations(propertyId, item, checkIn, checkOut),
-          ]);
-          return [item, analyticsData, recData.recommendations || []];
-        }),
-      );
-      setAnalyticsByAmenity(Object.fromEntries(results.map(([item, analyticsData]) => [item, analyticsData.slots || []])));
-      setRecommendationsByAmenity(Object.fromEntries(results.map(([item, , recs]) => [item, recs])));
+      for (const item of amenitiesToLoad) {
+        const [analyticsData, recData] = await Promise.all([
+          fetchBusyAnalytics(propertyId, item, checkIn, checkOut),
+          fetchRecommendations(propertyId, item, checkIn, checkOut),
+        ]);
+        setAnalyticsByAmenity((current) => ({
+          ...current,
+          [item]: analyticsData.slots || [],
+        }));
+        setRecommendationsByAmenity((current) => ({
+          ...current,
+          [item]: recData.recommendations || [],
+        }));
+        setEventMessage(`Loaded ${item} analytics.`);
+      }
       await loadSchedule();
     } catch (err) {
       console.error(err);
@@ -363,7 +367,7 @@ export default function BusyAnalyticsDashboard() {
               </section>
             )}
 
-            {!loading && analyticsEntries.length > 0 && analyticsEntries.map(([amenityName, rows]) => (
+            {analyticsEntries.length > 0 && analyticsEntries.map(([amenityName, rows]) => (
               <section className="enterprise-card analytics-workspace" key={amenityName}>
                 <div className="analytics-heading"><div><span className="eyebrow">Stay Range Metrics</span><h2>{amenityName}</h2><p>Busy and demand metrics are shown in 30-minute intervals from check-in to checkout.</p></div></div>
                 <div className="enterprise-chart-frame">
