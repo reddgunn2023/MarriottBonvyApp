@@ -37,6 +37,45 @@ const RESORT_HIGHLIGHTS = [
   { value: "2", label: "Championship golf courses" },
 ];
 
+const FEATURED_AMENITY_TABS = [
+  { id: "property", label: "Property Amenities", count: 12 },
+  { id: "room", label: "Room Amenities", count: 4 },
+  { id: "hotel", label: "Hotel Services", count: 7 },
+  { id: "all", label: "View All", count: 23 },
+];
+
+const PROPERTY_AMENITIES_ONSITE = [
+  { icon: "♻", name: "Sustainability" },
+  { icon: "🍽", name: "Restaurant On-Site", detail: "1 Restaurant", amenity: "Restaurants" },
+  { icon: "✓", name: "Convenience Store" },
+  { icon: "🛎", name: "All-Suites" },
+  { icon: "≈", name: "Outdoor Pool", detail: "Complimentary", amenity: "Pool" },
+  { icon: "♨", name: "Whirlpool", detail: "Complimentary", amenity: "Whirlpool Onsite" },
+  { icon: "⌁", name: "Cabanas/Palapas", detail: "$ 250.00", amenity: "Pool" },
+  { icon: "🍸", name: "On-Site Bar", detail: "1 Bar", amenity: "Lounges" },
+  { icon: "▣", name: "Business Center" },
+  { icon: "▤", name: "Meeting Space" },
+  { icon: "💪", name: "Fitness Center", detail: "Complimentary", amenity: "Fitness Center" },
+  { icon: "▧", name: "On-Site Laundry" },
+];
+
+const ROOM_AMENITIES_ONSITE = [
+  { icon: "☕", name: "Coffee Maker" },
+  { icon: "▥", name: "In-Room Safe" },
+  { icon: "▤", name: "Work Station" },
+  { icon: "▣", name: "Private Balcony" },
+];
+
+const HOTEL_SERVICES_ONSITE = [
+  { icon: "▱", name: "Free Hot Breakfast", detail: "Monday-Friday 6:30 AM-9:30 AM\nSaturday-Sunday 7:00 AM-10:00 AM", amenity: "Free Breakfast" },
+  { icon: "✓", name: "Free Coffee/Tea in Lobby" },
+  { icon: "♿", name: "Valet Dry Cleaning" },
+  { icon: "♿", name: "Same Day Dry Cleaning" },
+  { icon: "☼", name: "Wake-Up Calls" },
+  { icon: "↗", name: "Service Request" },
+  { icon: "✓", name: "Housekeeping", detail: "Every Other Day" },
+];
+
 function busyColor(score) {
   if (score <= 0.4) return BUSY_COLORS.low;
   if (score <= 0.7) return BUSY_COLORS.medium;
@@ -73,6 +112,7 @@ export default function BusyAnalyticsDashboard() {
   const [guestSchedule, setGuestSchedule] = useState([]);
   const [view, setView] = useState("landing");
   const [showConsentModal, setShowConsentModal] = useState(false);
+  const [activeFeatureTab, setActiveFeatureTab] = useState("property");
 
   useEffect(() => {
     async function loadInitialData() {
@@ -92,7 +132,6 @@ export default function BusyAnalyticsDashboard() {
     [properties, propertyId],
   );
 
-  const propertyAmenities = selectedProperty?.amenities || [];
   const availableAmenityTypes = amenityTypes.filter((item) =>
     selectedAmenities.includes(item),
   );
@@ -246,6 +285,24 @@ export default function BusyAnalyticsDashboard() {
     guestSchedule.some((item) => item.slot_id === slot.slotId);
 
   const tripPropertyName = selectedProperty?.name || "JW Marriott Miami Turnberry Resort & Spa";
+  const featuredItems = activeFeatureTab === "hotel"
+    ? HOTEL_SERVICES_ONSITE
+    : activeFeatureTab === "room"
+      ? ROOM_AMENITIES_ONSITE
+      : activeFeatureTab === "all"
+        ? [
+            ...PROPERTY_AMENITIES_ONSITE,
+            ...ROOM_AMENITIES_ONSITE,
+            ...HOTEL_SERVICES_ONSITE,
+          ]
+        : PROPERTY_AMENITIES_ONSITE;
+  const featuredTitle = activeFeatureTab === "hotel"
+    ? "Hotel Services On-Site"
+    : activeFeatureTab === "room"
+      ? "Room Amenities On-Site"
+      : activeFeatureTab === "all"
+        ? "All Amenities & Services On-Site"
+        : "Property Amenities On-Site";
 
   if (view === "landing") {
     return (
@@ -419,7 +476,7 @@ export default function BusyAnalyticsDashboard() {
       <header className="resort-hero">
         <div className="hero-copy">
           <span className="eyebrow">Aventura, Florida</span>
-          <h1>JW Marriott Miami Turnberry Resort &amp; Spa</h1>
+          <h1>{tripPropertyName}</h1>
           <p>
             A tropical resort command center for check-in, guest consent, amenity
             planning, waitlists, and guest-specific scheduling safeguards.
@@ -569,46 +626,63 @@ export default function BusyAnalyticsDashboard() {
           </button>
         </section>
 
-        <section className="amenity-filter-panel resort-panel">
-          <div className="section-heading compact-heading">
-            <span className="eyebrow">Property amenities & services</span>
-            <h2>{selectedProperty?.name || "Select a property"}</h2>
-            <p>
-              All amenities are enabled by default after consent. Clear or select
-              specific amenities to tailor the stay plan.
-            </p>
+        <section className="featured-amenities-section amenity-filter-panel resort-panel">
+          <div className="featured-heading">
+            <span className="eyebrow">{tripPropertyName}</span>
+            <h2>Featured Amenities On-Site</h2>
           </div>
-          <div className="filter-actions">
-            <button className="mini-btn" onClick={selectAllAmenities}>Enable all</button>
-            <button className="mini-btn" onClick={() => setSelectedAmenities([])}>Clear</button>
-            <button className="mini-btn" onClick={savePlanningPreferences} disabled={!planEnabled}>
-              Save preferences
-            </button>
-          </div>
-          <div className="amenity-chip-grid">
-            {propertyAmenities.map((item) => (
-              <label
-                className={`amenity-chip ${selectedAmenities.includes(item.name) ? "selected" : ""}`}
-                key={item.id}
+
+          <div className="featured-tabs" role="tablist" aria-label="Featured amenities categories">
+            {FEATURED_AMENITY_TABS.map((tab) => (
+              <button
+                key={tab.id}
+                className={activeFeatureTab === tab.id ? "active" : ""}
+                onClick={() => setActiveFeatureTab(tab.id)}
+                role="tab"
+                aria-selected={activeFeatureTab === tab.id}
               >
-                <input
-                  type="checkbox"
-                  checked={selectedAmenities.includes(item.name)}
-                  disabled={!planEnabled}
-                  onChange={() => toggleAmenityFilter(item.name)}
-                />
-                <span>{item.name}</span>
-              </label>
+                {tab.label} ({tab.count})
+              </button>
             ))}
           </div>
-          {selectedProperty?.services?.length > 0 && (
-            <div className="service-list">
-              <strong>Property services:</strong>
-              {selectedProperty.services.map((service) => (
-                <span key={service}>{service}</span>
-              ))}
+
+          <div className="featured-section-title-row">
+            <h3>{featuredTitle}</h3>
+            <span>⊙ included amenities (3)</span>
+          </div>
+
+          <div className="featured-amenities-grid">
+            {featuredItems.map((item) => {
+              const mappedAmenity = item.amenity;
+              const selected = mappedAmenity && selectedAmenities.includes(mappedAmenity);
+              return (
+                <button
+                  type="button"
+                  key={`${activeFeatureTab}-${item.name}`}
+                  className={`featured-amenity-item ${selected ? "selected" : ""}`}
+                  onClick={() => mappedAmenity && toggleAmenityFilter(mappedAmenity)}
+                  disabled={!mappedAmenity}
+                >
+                  <span className="featured-icon">{item.icon}</span>
+                  <span className="featured-copy">
+                    <strong>{item.name} {mappedAmenity ? "⊙" : ""}</strong>
+                    {item.detail && <small>{item.detail}</small>}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="featured-filter-footer">
+            <span>Analytics filters use the selectable on-site amenities that map to reservable services.</span>
+            <div className="filter-actions">
+              <button className="mini-btn" onClick={selectAllAmenities}>Enable all</button>
+              <button className="mini-btn" onClick={() => setSelectedAmenities([])}>Clear</button>
+              <button className="mini-btn" onClick={savePlanningPreferences} disabled={!planEnabled}>
+                Save preferences
+              </button>
             </div>
-          )}
+          </div>
         </section>
 
         {uniqueDates.length > 0 && (
