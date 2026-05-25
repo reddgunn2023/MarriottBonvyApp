@@ -28,7 +28,7 @@ from services.booking_service import (
     cancel,
     waitlist,
 )
-from services.csv_dataset_service import recent_events, seed_csv_datasets
+from services.csv_dataset_service import dataset_properties, recent_events, seed_csv_datasets
 from services.guest_service import check_in_guest, get_guest, save_guest_consent
 from services.analytics_service import get_busy_analytics, get_recommendations
 
@@ -55,6 +55,18 @@ def root():
 
 @app.get("/amenities/properties")
 def list_properties():
+    dataset_props = dataset_properties()
+    if dataset_props:
+        return {
+            "properties": [
+                {
+                    **prop,
+                    "amenities": get_property_amenities(prop["id"]),
+                }
+                for prop in dataset_props
+            ]
+        }
+
     properties = []
     for prop in PROPERTIES:
         properties.append(

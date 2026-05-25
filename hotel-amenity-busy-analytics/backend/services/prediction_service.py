@@ -14,8 +14,13 @@ from data.mock_slots import TIME_SLOTS, get_historical_busy_data
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 SOURCE_DATASET_CANDIDATES = [
+    REPO_ROOT / "hotel-amenity-busy-analytics/backend/data/hotel_amenity_large_dataset_60days_weather_traffic.xlsx",
+    REPO_ROOT / "hotel-amenity-busy-analytics/backend/src/data/hotel_amenity_large_dataset_60days_weather_traffic.xlsx",
+    REPO_ROOT / "src/data/hotel_amenity_large_dataset_60days_weather_traffic.xlsx",
+    REPO_ROOT / "src/data/hotel_amenity_large_dataset_60days_weather_traffic.xslx",
     REPO_ROOT / "src/data/hotel_amenity_large_dataset_60days.csv",
     REPO_ROOT / "hotel-amenity-busy-analytics/src/data/hotel_amenity_large_dataset_60days.csv",
+    Path("/Users/sgunn825/Documents/hotel_amenity_large_dataset_60days_weather_traffic.xlsx"),
     Path("/Users/sgunn825/Documents/hotel_amenity_large_dataset_60days.csv"),
 ]
 
@@ -137,40 +142,62 @@ def _features(slot: dict) -> list[float]:
     )
 
 
-def _external_training_rows() -> list[tuple[list[float], float]]:
+def _source_rows() -> list[dict]:
     if not SOURCE_DATASET.exists():
         return []
-    rows = []
+    if SOURCE_DATASET.suffix.lower() in {".xlsx", ".xslx"}:
+        from openpyxl import load_workbook
+
+        workbook = load_workbook(SOURCE_DATASET, read_only=True, data_only=True)
+        sheet = workbook.active
+        iterator = sheet.iter_rows(values_only=True)
+        headers = [str(value) if value is not None else "" for value in next(iterator)]
+        return [dict(zip(headers, row)) for row in iterator]
     with SOURCE_DATASET.open(newline="") as handle:
-        for row in csv.DictReader(handle):
-            capacity = max(_safe_float(_get(row, "capacity", "max_capacity", "total_capacity", default="1"), 1), 1)
-            booked = _safe_float(_get(row, "booked", "reserved", "reservations", "current_occupancy", "occupied", default="0"), 0)
-            waitlist = _safe_float(_get(row, "waitlist", "waiting", "waiting_count", "waiting_line", default="0"), 0)
-            busy = _safe_float(_get(row, "busy_score", default=""), min(booked / capacity, 1.0))
-            demand = _safe_float(_get(row, "demand_score", default=""), min(busy + (waitlist / capacity) * 0.5, 1.5))
-            weather = _weather_score(_get(row, "weather_condition", "weather", default="clear"))
-            traffic = _traffic_score(_get(row, "traffic_condition", "traffic", default="light"))
-            date_value = _get(row, "date", "slot_date", "stay_date", default="")
-            time_slot = _get(row, "time_slot", "time", "slot", "period", default=TIME_SLOTS[0])
-            amenity = _get(row, "amenity_name", "amenity", "service", "service_name", default="")
-            target = _safe_float(
-                _get(row, "future_busy", "futureBusy", "forecast_score", "predicted_busy", default=""),
-                _forecast_target(busy, demand, weather, traffic),
+        return list(csv.DictReader(handle))
+
+
+def _external_training_rows() -> list[tuple[list[float], float]]:
+    rows = []
+    for row in _source_rows():
+        capacity = max(_safe_float(_get(row, "totalCapacity", "capacity", "max_capacity", "total_capacity", default="1"), 1), 1)
+        booked = _safe_float(_get(row, "bookedCount", "booked", "reserved", "reservations", "current_occupancy", "occupied", default="0"), 0)
+        waitlist = _safe_float(_get(row, "waitlistCount", "waitlist", "waiting", "waiting_count", "waiting_line", default="0"), 0)
+        busy = _safe_float(_get(row, "busyScore", "busy_score", default=""), min(booked / capacity, 1.0))
+        demand = _safe_float(_get(row, "demandScore", "demand_score", default=""), min(busy + (waitlist / capacity) * 0.5, 1.5))
+        weather = _safe_float(
+            _get(row, "weatherSeverityScore", "weather_score", default=""),
+            _weather_score(_get(row, "weatherCondition", "weather_condition", "weather", default="clear")),
+        )
+        traffic = _safe_float(
+            _get(row, "trafficScore", "traffic_score", default=""),
+            _traffic_score(_get(row, "trafficLevel", "traffic_condition", "traffic", default="light")),
+        )
+        date_value = _get(row, "date", "slot_date", "stay_date", default="")
+        time_slot = _get(row, "time_slot", "timeSlot", "time", "slot", "period")
+        if not time_slot:
+            start = _get(row, "timeSlotStart", "time_slot_start", default=TIME_SLOTS[0].split("-")[0])
+            end = _get(row, "timeSlotEnd", "time_slot_end", default=TIME_SLOTS[0].split("-")[1])
+            time_slot = f"{start}-{end}"
+        amenity = _get(row, "amenityType", "amenity_type", "amenity_name", "amenity", "serviceName", "service_name", default="")
+        target = _safe_float(
+            _get(row, "future_busy", "futureBusy", "forecast_score", "predicted_busy", default=""),
+            _forecast_target(busy, demand, weather, traffic),
+        )
+        rows.append(
+            (
+                _features_from_values(
+                    busy,
+                    demand,
+                    weather,
+                    traffic,
+                    _time_index(time_slot),
+                    _day_of_week(date_value),
+                    amenity,
+                ),
+                min(max(target, 0.0), 1.0),
             )
-            rows.append(
-                (
-                    _features_from_values(
-                        busy,
-                        demand,
-                        weather,
-                        traffic,
-                        _time_index(time_slot),
-                        _day_of_week(date_value),
-                        amenity,
-                    ),
-                    min(max(target, 0.0), 1.0),
-                )
-            )
+        )
     return rows
 
 

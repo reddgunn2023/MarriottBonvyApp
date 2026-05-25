@@ -23,7 +23,7 @@ import "./BusyAnalyticsDashboard.css";
 const DEFAULT_HOTEL_NAME = "Residence Inn at Anaheim Resort/Convention Center";
 
 function todayStr() {
-  return new Date().toISOString().split("T")[0];
+  return "2026-03-26";
 }
 
 function addDays(dateStr, days) {
@@ -53,7 +53,7 @@ function routeContext() {
     .split("/")
     .filter(Boolean);
   return {
-    propertyId: propertyFromPath || "prop-001",
+    propertyId: propertyFromPath || "MARRIOTT101",
     guestId: userFromPath || "guest-default",
   };
 }

@@ -15,8 +15,13 @@ from services.score_service import calculate_busy_score, calculate_demand_score
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 SOURCE_DATASET_CANDIDATES = [
+    REPO_ROOT / "hotel-amenity-busy-analytics/backend/data/hotel_amenity_large_dataset_60days_weather_traffic.xlsx",
+    REPO_ROOT / "hotel-amenity-busy-analytics/backend/src/data/hotel_amenity_large_dataset_60days_weather_traffic.xlsx",
+    REPO_ROOT / "src/data/hotel_amenity_large_dataset_60days_weather_traffic.xlsx",
+    REPO_ROOT / "src/data/hotel_amenity_large_dataset_60days_weather_traffic.xslx",
     REPO_ROOT / "src/data/hotel_amenity_large_dataset_60days.csv",
     REPO_ROOT / "hotel-amenity-busy-analytics/src/data/hotel_amenity_large_dataset_60days.csv",
+    Path("/Users/sgunn825/Documents/hotel_amenity_large_dataset_60days_weather_traffic.xlsx"),
     Path("/Users/sgunn825/Documents/hotel_amenity_large_dataset_60days.csv"),
 ]
 
@@ -38,6 +43,9 @@ DATASET_FIELDS = [
     "date",
     "time_slot",
     "property_id",
+    "hotel_name",
+    "city",
+    "state",
     "amenity_id",
     "amenity_name",
     "category",
@@ -80,6 +88,39 @@ EVENT_FIELDS = [
     "message",
 ]
 
+AMENITY_TYPE_ALIASES = {
+    "breakfast": "free-breakfast",
+    "freebreakfast": "free-breakfast",
+    "evcharging": "ev-charging",
+    "ev_charging": "ev-charging",
+    "restaurants": "restaurants",
+    "restaurant": "restaurants",
+    "pool": "pool",
+    "spa": "spa",
+    "golf": "golf",
+    "fitness": "fitness-center",
+    "fitnesscenter": "fitness-center",
+    "whirlpool": "whirlpool-onsite",
+    "hottub": "whirlpool-onsite",
+}
+
+
+def _amenity_from_source(amenity_type: str, service_name: str = "") -> dict | None:
+    key = _norm_key(amenity_type).replace("_", "")
+    alias_id = AMENITY_TYPE_ALIASES.get(key) or AMENITY_TYPE_ALIASES.get(_slug(amenity_type))
+    for item in AMENITY_COLLECTIONS:
+        normalized_collection = _norm_key(item.get("collection", "")).replace("_", "")
+        if item["id"] == alias_id or normalized_collection == key or item["name"].lower() == amenity_type.lower():
+            return item
+    service_key = service_name.lower()
+    if "breakfast" in service_key:
+        return next(item for item in AMENITY_COLLECTIONS if item["id"] == "free-breakfast")
+    if "pool" in service_key:
+        return next(item for item in AMENITY_COLLECTIONS if item["id"] == "pool")
+    if "spa" in service_key:
+        return next(item for item in AMENITY_COLLECTIONS if item["id"] == "spa")
+    return None
+
 
 def _norm_key(key: str) -> str:
     return key.strip().lower().replace(" ", "_").replace("-", "_")
@@ -97,6 +138,13 @@ def _get(row: dict, *aliases: str, default: str = "") -> str:
 def _safe_int(value: str, default: int = 0) -> int:
     try:
         return int(float(str(value).strip()))
+    except (TypeError, ValueError):
+        return default
+
+
+def _safe_float(value: str, default: float = 0.0) -> float:
+    try:
+        return float(str(value).strip())
     except (TypeError, ValueError):
         return default
 
@@ -159,10 +207,10 @@ def _row_with_scores(row: dict) -> dict:
     booked = min(_safe_int(row.get("booked", 0)), capacity)
     waitlist = max(_safe_int(row.get("waitlist", 0)), 0)
     available = max(_safe_int(row.get("available", capacity - booked), capacity - booked), 0)
-    busy = calculate_busy_score(booked, capacity)
-    demand = calculate_demand_score(booked, capacity, waitlist)
-    w_score = weather_score(row.get("weather_condition", "clear"))
-    t_score = traffic_score(row.get("traffic_condition", "light"))
+    busy = _safe_float(row.get("busy_score", ""), calculate_busy_score(booked, capacity))
+    demand = _safe_float(row.get("demand_score", ""), calculate_demand_score(booked, capacity, waitlist))
+    w_score = _safe_float(row.get("weather_score", ""), weather_score(row.get("weather_condition", "clear")))
+    t_score = _safe_float(row.get("traffic_score", ""), traffic_score(row.get("traffic_condition", "light")))
     return {
         **row,
         "capacity": str(capacity),
@@ -192,7 +240,10 @@ def _base_rows(amenity: dict, start: date, days: int) -> list[dict]:
                     {
                         "date": current.isoformat(),
                         "time_slot": time_slot,
-                        "property_id": "prop-001",
+                        "property_id": "MARRIOTT101",
+                        "hotel_name": "Residence Inn Anaheim Resort",
+                        "city": "Anaheim",
+                        "state": "California",
                         "amenity_id": amenity["id"],
                         "amenity_name": amenity["name"],
                         "category": amenity["category"],
@@ -215,52 +266,74 @@ def _base_rows(amenity: dict, start: date, days: int) -> list[dict]:
 
 
 def _normalize_source_row(row: dict) -> dict | None:
-    amenity_name = _get(row, "amenity_name", "amenity", "service", "service_name", "amenity_type")
-    if not amenity_name:
+    amenity_type = _get(row, "amenityType", "amenity_type", "amenity", "amenity_name")
+    service_name = _get(row, "serviceName", "service_name", "service", default=amenity_type)
+    amenity = _amenity_from_source(amenity_type, service_name)
+    if not amenity:
         return None
-    amenity = next((item for item in AMENITY_COLLECTIONS if item["name"].lower() == amenity_name.lower()), None)
-    amenity_id = _get(row, "amenity_id", "service_id", default=amenity["id"] if amenity else _slug(amenity_name))
-    category = _get(row, "category", default=amenity["category"] if amenity else "Service")
-    capacity_default = amenity["capacity"] if amenity else 10
-    capacity = _safe_int(_get(row, "capacity", "max_capacity", "total_capacity", default=str(capacity_default)), capacity_default)
-    booked = _safe_int(_get(row, "booked", "reserved", "reservations", "current_occupancy", "occupied", default="0"), 0)
-    waitlist = _safe_int(_get(row, "waitlist", "waiting", "waiting_count", "waiting_line", default="0"), 0)
-    available = _safe_int(_get(row, "available", "open", "remaining", default=str(max(capacity - booked, 0))), max(capacity - booked, 0))
+    capacity = _safe_int(_get(row, "totalCapacity", "capacity", "max_capacity", "total_capacity", default=str(amenity["capacity"])), amenity["capacity"])
+    booked = _safe_int(_get(row, "bookedCount", "booked", "reserved", "reservations", "current_occupancy", "occupied", default="0"), 0)
+    waitlist = _safe_int(_get(row, "waitlistCount", "waitlist", "waiting", "waiting_count", "waiting_line", default="0"), 0)
+    available = _safe_int(_get(row, "availableCount", "available", "open", "remaining", default=str(max(capacity - booked, 0))), max(capacity - booked, 0))
     date_value = _get(row, "date", "slot_date", "stay_date", default=date.today().isoformat())
-    time_slot = _get(row, "time_slot", "time", "slot", "period", default=TIME_SLOTS[0])
+    time_slot = _get(row, "time_slot", "timeSlot", "time", "slot", "period")
+    if not time_slot:
+        start = _get(row, "timeSlotStart", "time_slot_start", default=TIME_SLOTS[0].split("-")[0])
+        end = _get(row, "timeSlotEnd", "time_slot_end", default=TIME_SLOTS[0].split("-")[1])
+        time_slot = f"{start}-{end}"
     return _row_with_scores(
         {
             "date": date_value,
             "time_slot": time_slot,
-            "property_id": _get(row, "property_id", "property", "hotel_id", default="prop-001"),
-            "amenity_id": amenity_id,
-            "amenity_name": amenity_name,
-            "category": category,
+            "property_id": _get(row, "propertyId", "property_id", "property", "hotel_id", default="MARRIOTT101"),
+            "hotel_name": _get(row, "hotelName", "hotel_name", default="Residence Inn Anaheim Resort"),
+            "city": _get(row, "city", default="Anaheim"),
+            "state": _get(row, "state", default="California"),
+            "amenity_id": amenity["id"],
+            "amenity_name": amenity["name"],
+            "category": amenity["category"],
             "capacity": str(capacity),
             "booked": str(booked),
             "available": str(available),
             "waitlist": str(waitlist),
-            "weather_condition": _get(row, "weather_condition", "weather", default="clear"),
-            "traffic_condition": _get(row, "traffic_condition", "traffic", default="light"),
+            "busy_score": _get(row, "busyScore", "busy_score", default=""),
+            "demand_score": _get(row, "demandScore", "demand_score", default=""),
+            "weather_condition": _get(row, "weatherCondition", "weather_condition", "weather", default="clear"),
+            "traffic_condition": _get(row, "trafficLevel", "traffic_condition", "traffic", default="light"),
+            "weather_score": _get(row, "weatherSeverityScore", "weather_score", default=""),
+            "traffic_score": _get(row, "trafficScore", "traffic_score", default=""),
+            "forecast_score": _get(row, "predictionScore", "forecast_score", "futureBusy", default=""),
             "last_guest_id": _get(row, "last_guest_id", "guest_id", "user_id", default=""),
             "reserved_guest_id": _get(row, "reserved_guest_id", default=""),
             "cancelled_guest_id": _get(row, "cancelled_guest_id", default=""),
             "waitlist_guest_id": _get(row, "waitlist_guest_id", default=""),
             "last_event": _get(row, "last_event", default="source"),
-            "updated_at": _get(row, "updated_at", default=""),
+            "updated_at": _get(row, "updated_at", "lastUpdatedAt", default=""),
         }
     )
 
 
-def _seed_from_source() -> list[str]:
+def _source_rows() -> list[dict]:
     if not SOURCE_DATASET.exists():
         return []
-    grouped: dict[str, list[dict]] = {}
+    if SOURCE_DATASET.suffix.lower() in {".xlsx", ".xslx"}:
+        from openpyxl import load_workbook
+
+        workbook = load_workbook(SOURCE_DATASET, read_only=True, data_only=True)
+        sheet = workbook.active
+        iterator = sheet.iter_rows(values_only=True)
+        headers = [str(value) if value is not None else "" for value in next(iterator)]
+        return [dict(zip(headers, row)) for row in iterator]
     with SOURCE_DATASET.open(newline="") as handle:
-        for row in csv.DictReader(handle):
-            normalized = _normalize_source_row(row)
-            if normalized:
-                grouped.setdefault(normalized["amenity_id"], []).append(normalized)
+        return list(csv.DictReader(handle))
+
+
+def _seed_from_source() -> list[str]:
+    grouped: dict[str, list[dict]] = {}
+    for row in _source_rows():
+        normalized = _normalize_source_row(row)
+        if normalized:
+            grouped.setdefault(normalized["amenity_id"], []).append(normalized)
     created = []
     for amenity_id, rows in grouped.items():
         path = _dataset_path(amenity_id)
@@ -270,6 +343,24 @@ def _seed_from_source() -> list[str]:
             writer.writerows(rows)
         created.append(str(path))
     return created
+
+
+def dataset_properties() -> list[dict]:
+    """Return distinct properties discovered from the source workbook/CSV."""
+    properties: dict[str, dict] = {}
+    for row in _source_rows():
+        property_id = _get(row, "propertyId", "property_id", "property", default="")
+        if not property_id or property_id in properties:
+            continue
+        hotel_name = _get(row, "hotelName", "hotel_name", default=property_id)
+        properties[property_id] = {
+            "id": property_id,
+            "name": hotel_name,
+            "location": ", ".join(part for part in [_get(row, "city"), _get(row, "state")] if part),
+            "amenity_ids": [item["id"] for item in AMENITY_COLLECTIONS],
+            "services": ["Digital Check In", "Mobile Key", "Service Request", "Wake-Up Calls", "Laundry", "Dry Cleaning Service", "Gift Shop"],
+        }
+    return list(properties.values())
 
 
 def seed_csv_datasets(start: date | None = None, days: int = 30) -> dict:
@@ -298,7 +389,7 @@ def seed_csv_datasets(start: date | None = None, days: int = 30) -> dict:
     return {
         "source_dataset": str(SOURCE_DATASET),
         "source_dataset_found": SOURCE_DATASET.exists(),
-        "source_dataset_used": source_used,
+        "source_dataset_used": SOURCE_DATASET.exists(),
         "dataset_dir": str(DATASET_DIR),
         "event_log": str(EVENT_LOG),
         "created": created,
