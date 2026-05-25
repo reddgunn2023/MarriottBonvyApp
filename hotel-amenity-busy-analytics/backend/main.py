@@ -28,7 +28,7 @@ from services.booking_service import (
     cancel,
     waitlist,
 )
-from services.csv_dataset_service import dataset_properties, dataset_property_amenities, recent_events, seed_csv_datasets
+from services.csv_dataset_service import canonical_property_id, dataset_properties, dataset_property_amenities, dataset_property_date_range, recent_events, seed_csv_datasets
 from services.guest_service import check_in_guest, get_guest, save_guest_consent
 from services.analytics_service import get_busy_analytics, get_recommendations
 
@@ -85,12 +85,39 @@ def list_catalog():
 
 @app.get("/amenities/types")
 def list_amenity_types(property_id: str | None = Query(default=None)):
-    if property_id:
-        dataset_amenities = dataset_property_amenities(property_id)
+    dataset_props = dataset_properties()
+    requested_property_id = property_id or (dataset_props[0]["id"] if dataset_props else None)
+    active_property_id = canonical_property_id(requested_property_id) if requested_property_id else None
+
+    if active_property_id:
+        dataset_amenities = dataset_property_amenities(active_property_id)
+        property_record = next((prop for prop in dataset_props if prop["id"] == active_property_id), None)
         if dataset_amenities:
-            return {"amenities": [amenity["name"] for amenity in dataset_amenities]}
-        return {"amenities": [amenity["name"] for amenity in get_property_amenities(property_id)]}
-    return {"amenities": AMENITIES}
+            return {
+                "property_id": active_property_id,
+                "property": property_record,
+                "date_range": dataset_property_date_range(active_property_id),
+                "amenities": [amenity["name"] for amenity in dataset_amenities],
+                "amenity_details": dataset_amenities,
+                "services": property_record.get("services", []) if property_record else [],
+            }
+        return {
+            "property_id": active_property_id,
+            "property": property_record,
+            "date_range": dataset_property_date_range(active_property_id),
+            "amenities": [amenity["name"] for amenity in get_property_amenities(active_property_id)],
+            "amenity_details": get_property_amenities(active_property_id),
+            "services": property_record.get("services", []) if property_record else [],
+        }
+
+    return {
+        "property_id": None,
+        "property": None,
+        "date_range": {"check_in": None, "check_out": None},
+        "amenities": AMENITIES,
+        "amenity_details": [],
+        "services": [],
+    }
 
 
 

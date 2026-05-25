@@ -681,6 +681,22 @@ def get_slots_from_datasets(
     return slots
 
 
+def dataset_property_date_range(property_id: str) -> dict:
+    """Return min/max workbook dates for a property after property aliasing."""
+    property_id = canonical_property_id(property_id)
+    seed_csv_datasets()
+    dates: list[str] = []
+    for path in sorted(DATASET_DIR.glob("*.csv")):
+        if path.name == EVENT_LOG.name:
+            continue
+        for row in _read_rows(path):
+            if row.get("property_id") == property_id and row.get("date"):
+                dates.append(row["date"])
+    if not dates:
+        return {"check_in": None, "check_out": None}
+    return {"check_in": min(dates), "check_out": max(dates)}
+
+
 def recent_events(limit: int = 25) -> list[dict]:
     seed_csv_datasets()
     rows = _read_rows(EVENT_LOG)
