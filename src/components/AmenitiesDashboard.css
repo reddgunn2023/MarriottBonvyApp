@@ -1,0 +1,161 @@
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.dashboard-title {
+  font-size: 28px;
+  margin-bottom: 4px;
+}
+
+.dashboard-subtitle {
+  font-size: 14px;
+  color: var(--marriott-gray-500);
+}
+
+.dashboard-stats {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+
+.stat-card {
+  background: var(--marriott-white);
+  border: 1px solid var(--marriott-gray-200);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.stat-value {
+  display: block;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--marriott-gray-800);
+  margin-bottom: 2px;
+}
+
+.stat-label {
+  font-size: 11px;
+  color: var(--marriott-gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+.stat-available .stat-value { color: var(--status-available); }
+.stat-moderate .stat-value { color: var(--status-moderate); }
+.stat-busy .stat-value { color: var(--status-busy); }
+.stat-queue .stat-value { color: var(--marriott-gold); }
+
+.dashboard-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.filter-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--marriott-gray-500);
+  margin-right: 2px;
+}
+
+.filter-btn {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border: 1px solid var(--marriott-gray-200);
+  border-radius: 20px;
+  background: var(--marriott-white);
+  color: var(--marriott-gray-600);
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.filter-btn:hover {
+  border-color: var(--marriott-gold-light);
+  color: var(--marriott-gold);
+}
+
+.filter-btn.active {
+  background: var(--marriott-primary);
+  color: var(--marriott-white);
+  border-color: var(--marriott-primary);
+}
+
+.filter-btn.active.filter-available {
+  background: var(--status-available);
+  border-color: var(--status-available);
+}
+
+.filter-btn.active.filter-moderate {
+  background: var(--status-moderate);
+  border-color: var(--status-moderate);
+}
+
+.filter-btn.active.filter-busy {
+  background: var(--status-busy);
+  border-color: var(--status-busy);
+}
+
+.filter-count {
+  font-size: 10px;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 1px 6px;
+  border-radius: 8px;
+}
+
+.filter-btn:not(.active) .filter-count {
+  background: var(--marriott-gray-100);
+}
+
+.amenities-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.no-results {
+  text-align: center;
+  padding: 48px;
+  color: var(--marriott-gray-400);
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .dashboard-stats {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .dashboard-filters {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .filter-group {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

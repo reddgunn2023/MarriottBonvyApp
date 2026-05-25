@@ -1,0 +1,140 @@
+.header {
+  background: var(--marriott-primary);
+  color: var(--marriott-white);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow-md);
+}
+
+.header-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+}
+
+.header-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-m {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--marriott-gold);
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--marriott-gold);
+  border-radius: 4px;
+}
+
+.logo-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.logo-marriott {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 3px;
+}
+
+.logo-bonvoy {
+  font-size: 12px;
+  font-weight: 300;
+  color: var(--marriott-gold-light);
+  letter-spacing: 1px;
+  font-style: italic;
+}
+
+.header-nav {
+  display: flex;
+  gap: 4px;
+}
+
+.nav-link {
+  color: var(--marriott-gray-400);
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+  text-decoration: none;
+}
+
+.nav-link:hover {
+  color: var(--marriott-white);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.nav-link.active {
+  color: var(--marriott-gold);
+  background: rgba(181, 152, 90, 0.12);
+}
+
+.header-guest {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.guest-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.2;
+}
+
+.guest-name {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.guest-tier {
+  font-size: 11px;
+  color: var(--marriott-gold-light);
+  font-weight: 400;
+}
+
+.guest-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--marriott-gold);
+  color: var(--marriott-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .header-inner {
+    padding: 0 16px;
+    gap: 16px;
+  }
+
+  .guest-info {
+    display: none;
+  }
+
+  .logo-text {
+    display: none;
+  }
+}
