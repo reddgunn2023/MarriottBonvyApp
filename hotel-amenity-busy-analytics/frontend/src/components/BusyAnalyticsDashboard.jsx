@@ -76,8 +76,8 @@ export default function BusyAnalyticsDashboard() {
   const [amenityTypes, setAmenityTypes] = useState([]);
   const [amenity, setAmenity] = useState("Free Breakfast");
   const [selectedAmenities, setSelectedAmenities] = useState([]);
-  const [checkIn] = useState(todayStr());
-  const [checkOut] = useState(addDays(todayStr(), 3));
+  const [checkIn, setCheckIn] = useState(todayStr());
+  const [checkOut, setCheckOut] = useState(addDays(todayStr(), 3));
   const [guestName, setGuestName] = useState("Taylor Bonvoy");
   const [checkedIn, setCheckedIn] = useState(false);
   const [planEnabled, setPlanEnabled] = useState(false);
@@ -332,12 +332,14 @@ export default function BusyAnalyticsDashboard() {
         ) : (
           <>
             <section className="enterprise-toolbar enterprise-card multi-amenity-toolbar">
-              <div className="stay-range-inline">
-                <span>Checkin Date:</span><strong>{checkIn}</strong>
-              </div>
-              <div className="stay-range-inline">
-                <span>Checkout Date:</span><strong>{checkOut}</strong>
-              </div>
+              <label className="stay-range-inline date-input-card">
+                <span>Checkin Date:</span>
+                <input type="date" value={checkIn} onChange={(event) => setCheckIn(event.target.value)} />
+              </label>
+              <label className="stay-range-inline date-input-card">
+                <span>Checkout Date:</span>
+                <input type="date" value={checkOut} onChange={(event) => setCheckOut(event.target.value)} />
+              </label>
               <div className="multi-select-panel">
                 <span>Amenities & Services</span>
                 <div className="multi-select-chip-grid">

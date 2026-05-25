@@ -124,8 +124,8 @@ OPEN_HOURS_BY_AMENITY = {
         "saturday_sunday": "9:00 AM-8:00 PM",
     },
     "fitness-center": {
-        "monday_friday": "5:00 AM-11:00 PM",
-        "saturday_sunday": "5:00 AM-11:00 PM",
+        "monday_friday": "6:00 AM-10:00 PM",
+        "saturday_sunday": "6:00 AM-10:00 PM",
     },
     "pool": {
         "monday_friday": "7:00 AM-10:00 PM",

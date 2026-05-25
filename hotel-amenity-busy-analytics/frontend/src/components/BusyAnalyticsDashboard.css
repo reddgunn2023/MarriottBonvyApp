@@ -2105,3 +2105,14 @@ input {
   font-size: 0.78rem;
   font-weight: 800;
 }
+
+
+.date-input-card input {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: #24201c;
+  font-size: 1.05rem;
+  font-weight: 800;
+  outline: none;
+}
