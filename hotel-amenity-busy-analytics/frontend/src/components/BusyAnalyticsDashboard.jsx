@@ -1,0 +1,628 @@
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  Cell,
+} from "recharts";
+import {
+  checkInGuest,
+  fetchAmenityTypes,
+  fetchBusyAnalytics,
+  fetchGuestSchedule,
+  fetchProperties,
+  fetchRecommendations,
+  postEvent,
+  saveGuestConsent,
+} from "../services/amenityApi";
+import "./BusyAnalyticsDashboard.css";
+
+const GUEST_ID = "guest-default";
+
+const BUSY_COLORS = {
+  low: "#4caf50",
+  medium: "#ff9800",
+  high: "#f44336",
+};
+
+const RESORT_HIGHLIGHTS = [
+  { value: "685", label: "Guest rooms & suites" },
+  { value: "5-acre", label: "Tidal Cove waterpark" },
+  { value: "3-story", label: "Spa & wellness collective" },
+  { value: "2", label: "Championship golf courses" },
+];
+
+function busyColor(score) {
+  if (score <= 0.4) return BUSY_COLORS.low;
+  if (score <= 0.7) return BUSY_COLORS.medium;
+  return BUSY_COLORS.high;
+}
+
+function todayStr() {
+  return new Date().toISOString().split("T")[0];
+}
+
+function addDays(dateStr, days) {
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() + days);
+  return d.toISOString().split("T")[0];
+}
+
+export default function BusyAnalyticsDashboard() {
+  const [properties, setProperties] = useState([]);
+  const [amenityTypes, setAmenityTypes] = useState([]);
+  const [propertyId, setPropertyId] = useState("prop-001");
+  const [amenity, setAmenity] = useState("Spa");
+  const [selectedAmenities, setSelectedAmenities] = useState([]);
+  const [checkIn, setCheckIn] = useState(todayStr());
+  const [checkOut, setCheckOut] = useState(addDays(todayStr(), 3));
+  const [guestName, setGuestName] = useState("Taylor Bonvoy");
+  const [checkedIn, setCheckedIn] = useState(false);
+  const [planEnabled, setPlanEnabled] = useState(false);
+  const [analytics, setAnalytics] = useState(null);
+  const [recommendations, setRecommendations] = useState([]);
+  const [selectedSlot, setSelectedSlot] = useState(null);
+  const [eventMessage, setEventMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [guestSchedule, setGuestSchedule] = useState([]);
+
+  useEffect(() => {
+    async function loadInitialData() {
+      const loadedProperties = await fetchProperties();
+      setProperties(loadedProperties);
+      const loadedAmenityTypes = await fetchAmenityTypes(propertyId);
+      setAmenityTypes(loadedAmenityTypes);
+      setSelectedAmenities(loadedAmenityTypes);
+      setAmenity(loadedAmenityTypes[0] || "Spa");
+      setGuestSchedule((await fetchGuestSchedule(GUEST_ID)) || []);
+    }
+    loadInitialData().catch(console.error);
+  }, [propertyId]);
+
+  const selectedProperty = useMemo(
+    () => properties.find((property) => property.id === propertyId),
+    [properties, propertyId],
+  );
+
+  const propertyAmenities = selectedProperty?.amenities || [];
+  const availableAmenityTypes = amenityTypes.filter((item) =>
+    selectedAmenities.includes(item),
+  );
+
+  const loadSchedule = useCallback(async () => {
+    setGuestSchedule((await fetchGuestSchedule(GUEST_ID)) || []);
+  }, []);
+
+  const loadAnalytics = useCallback(async (clearMessage = true) => {
+    if (!amenity) return;
+    setLoading(true);
+    if (clearMessage) {
+      setEventMessage("");
+    }
+    try {
+      const [analyticsData, recData] = await Promise.all([
+        fetchBusyAnalytics(propertyId, amenity, checkIn, checkOut),
+        fetchRecommendations(propertyId, amenity, checkIn, checkOut),
+      ]);
+      setAnalytics(analyticsData);
+      setRecommendations(recData.recommendations || []);
+      const dates = [...new Set(analyticsData.slots.map((s) => s.date))];
+      setSelectedDate(dates[0] || null);
+      setSelectedSlot(null);
+      await loadSchedule();
+    } catch (err) {
+      console.error(err);
+      setEventMessage("Failed to load analytics");
+    } finally {
+      setLoading(false);
+    }
+  }, [propertyId, amenity, checkIn, checkOut, loadSchedule]);
+
+  const handlePropertyChange = async (nextPropertyId) => {
+    setPropertyId(nextPropertyId);
+    setAnalytics(null);
+    setRecommendations([]);
+    setSelectedSlot(null);
+    setEventMessage("");
+    const propertyAmenityTypes = await fetchAmenityTypes(nextPropertyId);
+    setAmenityTypes(propertyAmenityTypes);
+    setSelectedAmenities(propertyAmenityTypes);
+    setAmenity(propertyAmenityTypes[0] || "");
+  };
+
+  const handleCheckIn = async () => {
+    const guest = await checkInGuest({
+      guest_id: GUEST_ID,
+      guest_name: guestName,
+      property_id: propertyId,
+      check_in: checkIn,
+      check_out: checkOut,
+    });
+    setCheckedIn(guest.checked_in);
+    setEventMessage(`${guest.guest_name} checked in. You can now enable Plan Your Stay.`);
+  };
+
+  const handlePlanToggle = async (enabled) => {
+    const selected = selectedAmenities.length ? selectedAmenities : amenityTypes;
+    const guest = await saveGuestConsent({
+      guest_id: GUEST_ID,
+      property_id: propertyId,
+      plan_your_stay_enabled: enabled,
+      selected_amenities: selected,
+    });
+    setPlanEnabled(guest.plan_your_stay_enabled);
+    setSelectedAmenities(guest.selected_amenities);
+    setEventMessage(
+      enabled
+        ? "Guest consent captured. All selected amenities are enabled for planning."
+        : "Plan Your Stay disabled for this guest.",
+    );
+  };
+
+  const toggleAmenityFilter = (amenityName) => {
+    setSelectedAmenities((current) => {
+      const next = current.includes(amenityName)
+        ? current.filter((item) => item !== amenityName)
+        : [...current, amenityName];
+      if (!next.includes(amenity)) {
+        setAmenity(next[0] || "");
+      }
+      return next;
+    });
+  };
+
+  const selectAllAmenities = () => {
+    setSelectedAmenities(amenityTypes);
+    setAmenity(amenityTypes[0] || "");
+  };
+
+  const savePlanningPreferences = async () => {
+    const guest = await saveGuestConsent({
+      guest_id: GUEST_ID,
+      property_id: propertyId,
+      plan_your_stay_enabled: planEnabled,
+      selected_amenities: selectedAmenities,
+    });
+    setSelectedAmenities(guest.selected_amenities);
+    setEventMessage("Amenity planning preferences saved.");
+  };
+
+  const handleEvent = async (slotId, eventType) => {
+    try {
+      const result = await postEvent(propertyId, slotId, eventType, GUEST_ID);
+      setEventMessage(result.message);
+      await loadSchedule();
+      await loadAnalytics(false);
+    } catch (err) {
+      console.error(err);
+      setEventMessage("Event failed");
+    }
+  };
+
+  const uniqueDates = analytics
+    ? [...new Set(analytics.slots.map((s) => s.date))]
+    : [];
+
+  const chartData =
+    analytics && selectedDate
+      ? analytics.slots
+          .filter((s) => s.date === selectedDate)
+          .map((s) => ({
+            date: s.date,
+            timeSlot: s.time_slot,
+            busyScore: s.busy_score,
+            demandScore: s.demand_score,
+            futureBusy: s.future_busy,
+            available: s.available,
+            booked: s.booked,
+            capacity: s.capacity,
+            waitlistCount: s.waitlist_count,
+            slotId: s.slot_id,
+            status: s.status,
+          }))
+      : [];
+
+  const scheduleConflictFor = (slot) =>
+    guestSchedule.find(
+      (item) =>
+        item.date === slot.date &&
+        item.time_slot === slot.timeSlot &&
+        item.slot_id !== slot.slotId,
+    );
+
+  const isReservedByGuest = (slot) =>
+    guestSchedule.some((item) => item.slot_id === slot.slotId);
+
+  return (
+    <div className="turnberry-shell">
+      <nav className="brand-bar" aria-label="Property navigation">
+        <div className="brand-lockup">
+          <span className="brand-mark">JW</span>
+          <div>
+            <span className="eyebrow">Marriott Bonvoy</span>
+            <strong>Turnberry Amenity Intelligence</strong>
+          </div>
+        </div>
+        <div className="nav-links" aria-hidden="true">
+          <span>Overview</span>
+          <span>Accommodations</span>
+          <span>Dining</span>
+          <span>Waterpark</span>
+          <span>Experiences</span>
+        </div>
+      </nav>
+
+      <header className="resort-hero">
+        <div className="hero-copy">
+          <span className="eyebrow">Aventura, Florida</span>
+          <h1>JW Marriott Miami Turnberry Resort &amp; Spa</h1>
+          <p>
+            A tropical resort command center for check-in, guest consent, amenity
+            planning, waitlists, and guest-specific scheduling safeguards.
+          </p>
+          <div className="hero-actions" aria-label="Property highlights">
+            <span>Luxury resort</span>
+            <span>Tidal Cove Waterpark</span>
+            <span>Spa &amp; Wellness</span>
+          </div>
+        </div>
+
+        <div className="hero-visual" aria-label="Resort-inspired visual panel">
+          <div className="visual-card visual-card-primary">
+            <span>Plan Your Stay</span>
+            <strong>{planEnabled ? "Enabled" : "Awaiting consent"}</strong>
+            <small>{selectedProperty?.name || "Select a property"}</small>
+          </div>
+          <div className="visual-card visual-card-secondary">
+            <span>Guest stay</span>
+            <strong>{checkedIn ? "Checked in" : "Not checked in"}</strong>
+            <small>{checkIn} through {checkOut}</small>
+          </div>
+        </div>
+      </header>
+
+      <section className="resort-overview" aria-label="Resort overview highlights">
+        {RESORT_HIGHLIGHTS.map((item) => (
+          <article className="overview-card" key={item.label}>
+            <strong>{item.value}</strong>
+            <span>{item.label}</span>
+          </article>
+        ))}
+      </section>
+
+      <main className="dashboard">
+        <section className="intro-section">
+          <span className="eyebrow">Guest Journey</span>
+          <h2>Check in, enable planning, then reserve amenities</h2>
+          <p>
+            Guests check in to a property first. After consent is captured, all
+            property amenities are enabled by default and can be filtered before
+            booking, waitlisting, or reviewing predicted busy windows.
+          </p>
+        </section>
+
+        <section className="journey-grid">
+          <article className="journey-card">
+            <span className="step-badge">1</span>
+            <h3>Check in to property</h3>
+            <div className="control-group">
+              <label htmlFor="guestName">Guest name</label>
+              <input
+                id="guestName"
+                value={guestName}
+                onChange={(e) => setGuestName(e.target.value)}
+              />
+            </div>
+            <button className="btn btn-primary" onClick={handleCheckIn}>
+              {checkedIn ? "Checked In" : "Check In"}
+            </button>
+          </article>
+
+          <article className="journey-card">
+            <span className="step-badge">2</span>
+            <h3>Enable Plan Your Stay</h3>
+            <p>
+              Enabling this captures guest consent to personalize amenity
+              planning, availability analytics, and waitlist recommendations.
+            </p>
+            <label className={`plan-toggle ${planEnabled ? "enabled" : ""}`}>
+              <input
+                type="checkbox"
+                checked={planEnabled}
+                disabled={!checkedIn}
+                onChange={(e) => handlePlanToggle(e.target.checked)}
+              />
+              <span>{planEnabled ? "Planning enabled" : "Enable planning consent"}</span>
+            </label>
+          </article>
+
+          <article className="journey-card schedule-card">
+            <span className="step-badge">3</span>
+            <h3>Guest schedule</h3>
+            {guestSchedule.length === 0 ? (
+              <p>No reserved amenities yet.</p>
+            ) : (
+              <ul className="schedule-list">
+                {guestSchedule.map((item) => (
+                  <li key={item.slot_id}>
+                    <strong>{item.amenity}</strong>
+                    <span>{item.date} · {item.time_slot}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </article>
+        </section>
+
+        <section className="controls booking-panel" aria-label="Amenity analytics controls">
+          <div className="control-group property-control">
+            <label htmlFor="property">Property</label>
+            <select
+              id="property"
+              value={propertyId}
+              onChange={(e) => handlePropertyChange(e.target.value)}
+            >
+              {properties.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="control-group">
+            <label htmlFor="checkin">Check-in</label>
+            <input
+              id="checkin"
+              type="date"
+              value={checkIn}
+              onChange={(e) => setCheckIn(e.target.value)}
+            />
+          </div>
+
+          <div className="control-group">
+            <label htmlFor="checkout">Check-out</label>
+            <input
+              id="checkout"
+              type="date"
+              value={checkOut}
+              onChange={(e) => setCheckOut(e.target.value)}
+            />
+          </div>
+
+          <div className="control-group amenity-control">
+            <label htmlFor="amenity">Amenity / service</label>
+            <select
+              id="amenity"
+              value={amenity}
+              onChange={(e) => setAmenity(e.target.value)}
+              disabled={!planEnabled || availableAmenityTypes.length === 0}
+            >
+              {availableAmenityTypes.map((a) => (
+                <option key={a} value={a}>
+                  {a}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <button
+            className="btn btn-primary analytics-cta"
+            onClick={() => loadAnalytics()}
+            disabled={!checkedIn || !planEnabled || !amenity || loading}
+          >
+            {loading ? "Loading..." : "Get Busy Analytics"}
+          </button>
+        </section>
+
+        <section className="amenity-filter-panel resort-panel">
+          <div className="section-heading compact-heading">
+            <span className="eyebrow">Property amenities & services</span>
+            <h2>{selectedProperty?.name || "Select a property"}</h2>
+            <p>
+              All amenities are enabled by default after consent. Clear or select
+              specific amenities to tailor the stay plan.
+            </p>
+          </div>
+          <div className="filter-actions">
+            <button className="mini-btn" onClick={selectAllAmenities}>Enable all</button>
+            <button className="mini-btn" onClick={() => setSelectedAmenities([])}>Clear</button>
+            <button className="mini-btn" onClick={savePlanningPreferences} disabled={!planEnabled}>
+              Save preferences
+            </button>
+          </div>
+          <div className="amenity-chip-grid">
+            {propertyAmenities.map((item) => (
+              <label
+                className={`amenity-chip ${selectedAmenities.includes(item.name) ? "selected" : ""}`}
+                key={item.id}
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedAmenities.includes(item.name)}
+                  disabled={!planEnabled}
+                  onChange={() => toggleAmenityFilter(item.name)}
+                />
+                <span>{item.name}</span>
+                <small>{item.category} · {item.service_type.replace("_", " ")}</small>
+                <em>{item.description}</em>
+              </label>
+            ))}
+          </div>
+          {selectedProperty?.services?.length > 0 && (
+            <div className="service-list">
+              <strong>Property services:</strong>
+              {selectedProperty.services.map((service) => (
+                <span key={service}>{service}</span>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {uniqueDates.length > 0 && (
+          <section className="date-tabs" aria-label="Available stay dates">
+            {uniqueDates.map((d) => (
+              <button
+                key={d}
+                className={`date-tab ${selectedDate === d ? "active" : ""}`}
+                onClick={() => {
+                  setSelectedDate(d);
+                  setSelectedSlot(null);
+                }}
+              >
+                {d}
+              </button>
+            ))}
+          </section>
+        )}
+
+        {chartData.length > 0 && (
+          <section className="chart-section resort-panel">
+            <div className="section-heading">
+              <span className="eyebrow">Live Capacity</span>
+              <h2>
+                Busy Heatmap - {amenity} on {selectedDate}
+              </h2>
+              <p>
+                Compare current busy score, demand score, and LightGBM futureBusy
+                prediction before reserving or joining a waiting list.
+              </p>
+            </div>
+
+            <div className="chart-frame">
+              <ResponsiveContainer width="100%" height={350}>
+                <BarChart
+                  data={chartData}
+                  onClick={(e) => {
+                    if (e && e.activePayload) {
+                      setSelectedSlot(e.activePayload[0].payload.slotId);
+                    }
+                  }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="timeSlot" />
+                  <YAxis domain={[0, 1]} />
+                  <Tooltip
+                    formatter={(value, name) => [
+                      typeof value === "number" ? value.toFixed(2) : value,
+                      name,
+                    ]}
+                  />
+                  <Legend />
+                  <Bar dataKey="busyScore" name="Busy Score">
+                    {chartData.map((entry) => (
+                      <Cell
+                        key={entry.slotId}
+                        fill={busyColor(entry.busyScore)}
+                        stroke={
+                          selectedSlot === entry.slotId ? "#1f1b17" : "transparent"
+                        }
+                        strokeWidth={selectedSlot === entry.slotId ? 3 : 0}
+                      />
+                    ))}
+                  </Bar>
+                  <Bar dataKey="demandScore" name="Demand Score" fill="#b89154" />
+                  <Bar dataKey="futureBusy" name="futureBusy" fill="#5f7662" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div className="slot-grid">
+              {chartData.map((slot) => {
+                const conflict = scheduleConflictFor(slot);
+                const reserved = isReservedByGuest(slot);
+                const full = slot.available <= 0 || slot.status === "FULL";
+                return (
+                  <article
+                    key={slot.slotId}
+                    className={`slot-card ${selectedSlot === slot.slotId ? "selected" : ""} ${full ? "full" : ""}`}
+                    onClick={() => setSelectedSlot(slot.slotId)}
+                  >
+                    <div className="slot-card-header">
+                      <strong>{slot.timeSlot}</strong>
+                      <span>{full ? "Full" : `${slot.available} open`}</span>
+                    </div>
+                    <p>
+                      Busy {(slot.busyScore * 100).toFixed(0)}% · Demand {slot.demandScore.toFixed(2)} · futureBusy {(slot.futureBusy * 100).toFixed(0)}%
+                    </p>
+                    <small>Booked {slot.booked}/{slot.capacity} · Waitlist {slot.waitlistCount}</small>
+                    {conflict && (
+                      <em className="conflict-note">
+                        Conflicts with {conflict.amenity} at {conflict.time_slot}
+                      </em>
+                    )}
+                    <div className="slot-actions">
+                      {reserved ? (
+                        <button className="mini-btn danger" onClick={(e) => { e.stopPropagation(); handleEvent(slot.slotId, "CANCEL"); }}>
+                          Cancel
+                        </button>
+                      ) : full ? (
+                        <button className="mini-btn" onClick={(e) => { e.stopPropagation(); handleEvent(slot.slotId, "WAITLIST"); }}>
+                          Join Waiting List
+                        </button>
+                      ) : (
+                        <button
+                          className="mini-btn primary"
+                          disabled={Boolean(conflict)}
+                          onClick={(e) => { e.stopPropagation(); handleEvent(slot.slotId, "RESERVE"); }}
+                        >
+                          Reserve
+                        </button>
+                      )}
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+
+            {eventMessage && <p className="event-msg">{eventMessage}</p>}
+          </section>
+        )}
+
+        {recommendations.length > 0 && (
+          <section className="recommendations resort-panel">
+            <div className="section-heading">
+              <span className="eyebrow">Personalized Planning</span>
+              <h2>Smart Recommendations</h2>
+              <p>
+                Recommendations use current occupancy and LightGBM futureBusy
+                predictions to surface calmer amenity windows.
+              </p>
+            </div>
+            <div className="rec-grid">
+              {recommendations.map((rec) => (
+                <div
+                  key={rec.slot_id}
+                  className={`rec-card ${selectedSlot === rec.slot_id ? "selected" : ""}`}
+                  onClick={() => {
+                    setSelectedSlot(rec.slot_id);
+                    setSelectedDate(rec.date);
+                  }}
+                >
+                  <div className="rec-header">
+                    <span className="rec-date">{rec.date}</span>
+                    <span className="rec-time">{rec.time_slot}</span>
+                  </div>
+                  <div
+                    className="rec-score"
+                    style={{ color: busyColor(rec.future_busy) }}
+                  >
+                    futureBusy: {(rec.future_busy * 100).toFixed(0)}%
+                  </div>
+                  <p className="rec-reason">{rec.reason}</p>
+                  <p className="rec-avail">{rec.available} spots available</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+      </main>
+    </div>
+  );
+}
