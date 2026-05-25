@@ -200,6 +200,26 @@ def get_historical_busy_data() -> list[dict]:
     return copy.deepcopy(_HISTORICAL_BUSY_DATA)
 
 
+def weather_condition_for(day: date, time_index: int, amenity_name: str) -> str:
+    """Deterministic weather signal for local fallback data."""
+    if day.day in {5, 12, 19, 26} and time_index in {2, 3, 4}:
+        return "severe"
+    if amenity_name in {"Pool", "Golf"} and time_index in {3, 4} and day.weekday() >= 5:
+        return "heat"
+    if day.day % 7 == 0:
+        return "rain"
+    return "clear"
+
+
+def traffic_condition_for(day: date, time_index: int) -> str:
+    """Deterministic traffic signal for local fallback data."""
+    if time_index in {1, 5} and day.weekday() < 5:
+        return "heavy"
+    if time_index in {2, 3, 4}:
+        return "moderate"
+    return "light"
+
+
 def _generate_slots_for_range(
     property_id: str,
     start_date: date,
@@ -242,6 +262,8 @@ def _generate_slots_for_range(
                         "waitlist": waitlist_count,
                         "waitlistGuests": [],
                         "reservedGuests": [],
+                        "weatherCondition": weather_condition_for(current_date, idx, amenity["name"]),
+                        "trafficCondition": traffic_condition_for(current_date, idx),
                         "status": "FULL" if available <= 0 else "AVAILABLE",
                     }
                 )

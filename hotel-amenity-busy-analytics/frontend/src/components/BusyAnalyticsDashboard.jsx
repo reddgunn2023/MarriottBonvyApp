@@ -313,7 +313,7 @@ export default function BusyAnalyticsDashboard() {
             <button className="reservation-search">Can&apos;t find a reservation? Search here</button>
           </section>
 
-          <section className="upcoming-trip-card" onClick={() => setView("trip")} role="button" tabIndex={0}>
+          <section className="upcoming-trip-card" onClick={() => setView("booking")} role="button" tabIndex={0}>
             <div className="trip-date-block">
               <span>May</span>
               <strong>25</strong>
@@ -323,7 +323,7 @@ export default function BusyAnalyticsDashboard() {
               <h2>{tripPropertyName}</h2>
               <p>Aventura, Florida · {checkIn} - {checkOut}</p>
             </div>
-            <button>View Trip</button>
+            <button onClick={(event) => { event.stopPropagation(); setView("booking"); }}>View Trip</button>
           </section>
         </main>
       </div>
@@ -370,7 +370,7 @@ export default function BusyAnalyticsDashboard() {
 
   return (
     <div className="turnberry-shell">
-      <button className="planner-back-link" onClick={() => setView("trip")}>Back to trip options</button>
+      <button className="planner-back-link" onClick={() => setView("landing")}>Back to trips</button>
       <nav className="brand-bar" aria-label="Property navigation">
         <div className="brand-lockup">
           <span className="brand-mark">JW</span>
@@ -437,8 +437,8 @@ export default function BusyAnalyticsDashboard() {
           </p>
         </section>
 
-        <section className="journey-grid">
-          <article className="journey-card">
+        <section className="journey-grid simplified-journey">
+          <article className="journey-card checkin-step-card">
             <span className="step-badge">1</span>
             <h3>Check in to property</h3>
             <div className="control-group">
@@ -454,42 +454,47 @@ export default function BusyAnalyticsDashboard() {
             </button>
           </article>
 
-          <article className="journey-card">
-            <span className="step-badge">2</span>
-            <h3>Enable Plan Your Stay</h3>
-            <p>
-              Enabling this captures guest consent to personalize amenity
-              planning, availability analytics, and waitlist recommendations.
-            </p>
-            <label className={`plan-toggle ${planEnabled ? "enabled" : ""}`}>
-              <input
-                type="checkbox"
-                checked={planEnabled}
-                disabled={!checkedIn}
-                onChange={(e) => handlePlanToggle(e.target.checked)}
-              />
-              <span>{planEnabled ? "Planning enabled" : "Enable planning consent"}</span>
-            </label>
-          </article>
+          {checkedIn && (
+            <article className="enhance-canvas">
+              <label className="canvas-toggle">
+                <input
+                  type="checkbox"
+                  checked={planEnabled}
+                  onChange={(e) => handlePlanToggle(e.target.checked)}
+                />
+                <span>{planEnabled ? "disable" : "enable"}</span>
+              </label>
+              <h3>Enhance Your Stay Experience</h3>
+              <p>
+                Enable Smart Amenity Insights to view real-time busy periods,
+                wait times, and personalized recommendations for amenities and
+                services during your stay.
+              </p>
+            </article>
+          )}
 
-          <article className="journey-card schedule-card">
-            <span className="step-badge">3</span>
-            <h3>Guest schedule</h3>
-            {guestSchedule.length === 0 ? (
-              <p>No reserved amenities yet.</p>
-            ) : (
-              <ul className="schedule-list">
-                {guestSchedule.map((item) => (
-                  <li key={item.slot_id}>
-                    <strong>{item.amenity}</strong>
-                    <span>{item.date} · {item.time_slot}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </article>
+          {planEnabled && (
+            <article className="journey-card schedule-card">
+              <span className="step-badge">3</span>
+              <h3>Guest schedule</h3>
+              {guestSchedule.length === 0 ? (
+                <p>No reserved amenities yet.</p>
+              ) : (
+                <ul className="schedule-list">
+                  {guestSchedule.map((item) => (
+                    <li key={item.slot_id}>
+                      <strong>{item.amenity}</strong>
+                      <span>{item.date} · {item.time_slot}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </article>
+          )}
         </section>
 
+        {planEnabled && (
+          <>
         <section className="controls booking-panel" aria-label="Amenity analytics controls">
           <div className="control-group property-control">
             <label htmlFor="property">Property</label>
@@ -751,6 +756,8 @@ export default function BusyAnalyticsDashboard() {
               ))}
             </div>
           </section>
+        )}
+          </>
         )}
       </main>
     </div>
