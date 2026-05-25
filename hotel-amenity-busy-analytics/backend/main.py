@@ -28,7 +28,7 @@ from services.booking_service import (
     cancel,
     waitlist,
 )
-from services.csv_dataset_service import dataset_properties, recent_events, seed_csv_datasets
+from services.csv_dataset_service import dataset_properties, dataset_property_amenities, recent_events, seed_csv_datasets
 from services.guest_service import check_in_guest, get_guest, save_guest_consent
 from services.analytics_service import get_busy_analytics, get_recommendations
 
@@ -61,7 +61,7 @@ def list_properties():
             "properties": [
                 {
                     **prop,
-                    "amenities": get_property_amenities(prop["id"]),
+                    "amenities": dataset_property_amenities(prop["id"]),
                 }
                 for prop in dataset_props
             ]
@@ -86,6 +86,9 @@ def list_catalog():
 @app.get("/amenities/types")
 def list_amenity_types(property_id: str | None = Query(default=None)):
     if property_id:
+        dataset_amenities = dataset_property_amenities(property_id)
+        if dataset_amenities:
+            return {"amenities": [amenity["name"] for amenity in dataset_amenities]}
         return {"amenities": [amenity["name"] for amenity in get_property_amenities(property_id)]}
     return {"amenities": AMENITIES}
 

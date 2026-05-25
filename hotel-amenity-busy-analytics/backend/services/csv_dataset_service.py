@@ -93,6 +93,9 @@ AMENITY_TYPE_ALIASES = {
     "freebreakfast": "free-breakfast",
     "evcharging": "ev-charging",
     "ev_charging": "ev-charging",
+    "tennis": "tennis",
+    "cabanas": "cabanas",
+    "cabana": "cabanas",
     "restaurants": "restaurants",
     "restaurant": "restaurants",
     "pool": "pool",
@@ -106,19 +109,31 @@ AMENITY_TYPE_ALIASES = {
 
 
 def _amenity_from_source(amenity_type: str, service_name: str = "") -> dict | None:
+    service_key = service_name.lower()
+    # Service names are more precise than broad workbook amenityType values.
+    if "breakfast" in service_key:
+        return next(item for item in AMENITY_COLLECTIONS if item["id"] == "free-breakfast")
+    if "lobby bar" in service_key or "bar" in service_key or "lounge" in service_key:
+        return next(item for item in AMENITY_COLLECTIONS if item["id"] == "lounges")
+    if "cabana" in service_key:
+        return next(item for item in AMENITY_COLLECTIONS if item["id"] == "cabanas")
+    if "tennis" in service_key:
+        return next(item for item in AMENITY_COLLECTIONS if item["id"] == "tennis")
+    if "charging" in service_key:
+        return next(item for item in AMENITY_COLLECTIONS if item["id"] == "ev-charging")
+    if "pool" in service_key:
+        return next(item for item in AMENITY_COLLECTIONS if item["id"] == "pool")
+    if "spa" in service_key:
+        return next(item for item in AMENITY_COLLECTIONS if item["id"] == "spa")
+    if "golf" in service_key:
+        return next(item for item in AMENITY_COLLECTIONS if item["id"] == "golf")
+
     key = _norm_key(amenity_type).replace("_", "")
     alias_id = AMENITY_TYPE_ALIASES.get(key) or AMENITY_TYPE_ALIASES.get(_slug(amenity_type))
     for item in AMENITY_COLLECTIONS:
         normalized_collection = _norm_key(item.get("collection", "")).replace("_", "")
         if item["id"] == alias_id or normalized_collection == key or item["name"].lower() == amenity_type.lower():
             return item
-    service_key = service_name.lower()
-    if "breakfast" in service_key:
-        return next(item for item in AMENITY_COLLECTIONS if item["id"] == "free-breakfast")
-    if "pool" in service_key:
-        return next(item for item in AMENITY_COLLECTIONS if item["id"] == "pool")
-    if "spa" in service_key:
-        return next(item for item in AMENITY_COLLECTIONS if item["id"] == "spa")
     return None
 
 
@@ -357,10 +372,28 @@ def dataset_properties() -> list[dict]:
             "id": property_id,
             "name": hotel_name,
             "location": ", ".join(part for part in [_get(row, "city"), _get(row, "state")] if part),
-            "amenity_ids": [item["id"] for item in AMENITY_COLLECTIONS],
+            "amenity_ids": [item["id"] for item in dataset_property_amenities(property_id)] if DATASET_DIR.exists() else [item["id"] for item in AMENITY_COLLECTIONS],
             "services": ["Digital Check In", "Mobile Key", "Service Request", "Wake-Up Calls", "Laundry", "Dry Cleaning Service", "Gift Shop"],
         }
     return list(properties.values())
+
+
+def dataset_property_amenities(property_id: str) -> list[dict]:
+    """Return only amenities/services present in the workbook/runtime rows for a property."""
+    seed_csv_datasets()
+    amenity_ids: set[str] = set()
+    for path in sorted(DATASET_DIR.glob("*.csv")):
+        if path.name == EVENT_LOG.name:
+            continue
+        for row in _read_rows(path):
+            if row.get("property_id") == property_id:
+                amenity_ids.add(row.get("amenity_id", ""))
+                break
+    by_id = {item["id"]: item for item in AMENITY_COLLECTIONS}
+    preferred = ["free-breakfast", "pool", "fitness-center", "lounges"]
+    ordered_ids = [item for item in preferred if item in amenity_ids]
+    ordered_ids.extend(sorted(amenity_ids - set(ordered_ids)))
+    return [{**by_id[item]} for item in ordered_ids if item in by_id]
 
 
 def seed_csv_datasets(start: date | None = None, days: int = 30) -> dict:
@@ -372,15 +405,16 @@ def seed_csv_datasets(start: date | None = None, days: int = 30) -> dict:
         created.extend(_seed_from_source())
         source_used = True
 
-    start = start or date.today().replace(day=1)
-    for amenity in AMENITY_COLLECTIONS:
-        path = _dataset_path(amenity["id"])
-        if not path.exists():
-            with path.open("w", newline="") as handle:
-                writer = csv.DictWriter(handle, fieldnames=DATASET_FIELDS)
-                writer.writeheader()
-                writer.writerows(_base_rows(amenity, start, days))
-            created.append(str(path))
+    if not SOURCE_DATASET.exists():
+        start = start or date.today().replace(day=1)
+        for amenity in AMENITY_COLLECTIONS:
+            path = _dataset_path(amenity["id"])
+            if not path.exists():
+                with path.open("w", newline="") as handle:
+                    writer = csv.DictWriter(handle, fieldnames=DATASET_FIELDS)
+                    writer.writeheader()
+                    writer.writerows(_base_rows(amenity, start, days))
+                created.append(str(path))
 
     if not EVENT_LOG.exists():
         with EVENT_LOG.open("w", newline="") as handle:

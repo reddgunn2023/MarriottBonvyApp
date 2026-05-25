@@ -21,6 +21,7 @@ import {
 import "./BusyAnalyticsDashboard.css";
 
 const DEFAULT_HOTEL_NAME = "Residence Inn at Anaheim Resort/Convention Center";
+const IMPORTANT_AMENITIES = ["Free Breakfast", "Pool", "Fitness Center", "Lounges"];
 
 function todayStr() {
   return "2026-03-26";
@@ -84,9 +85,10 @@ export default function BusyAnalyticsDashboard() {
       const loadedProperties = await fetchProperties();
       setProperties(loadedProperties);
       const loadedAmenityTypes = await fetchAmenityTypes(propertyId);
+      const defaultSelected = IMPORTANT_AMENITIES.filter((item) => loadedAmenityTypes.includes(item));
       setAmenityTypes(loadedAmenityTypes);
-      setSelectedAmenities(loadedAmenityTypes);
-      setAmenity(loadedAmenityTypes.includes("Free Breakfast") ? "Free Breakfast" : loadedAmenityTypes[0] || "");
+      setSelectedAmenities(defaultSelected.length ? defaultSelected : loadedAmenityTypes);
+      setAmenity(defaultSelected[0] || loadedAmenityTypes[0] || "");
       setGuestSchedule((await fetchGuestSchedule(guestId)) || []);
     }
     loadInitialData().catch(console.error);
