@@ -25,6 +25,13 @@ const BUSY_COLORS = {
   high: "#f44336",
 };
 
+const RESORT_HIGHLIGHTS = [
+  { value: "685", label: "Guest rooms & suites" },
+  { value: "5-acre", label: "Tidal Cove waterpark" },
+  { value: "3-story", label: "Spa & wellness collective" },
+  { value: "2", label: "Championship golf courses" },
+];
+
 function busyColor(score) {
   if (score <= 0.4) return BUSY_COLORS.low;
   if (score <= 0.7) return BUSY_COLORS.medium;
@@ -95,6 +102,10 @@ export default function BusyAnalyticsDashboard() {
     }
   };
 
+  const selectedProperty =
+    properties.find((property) => property.id === propertyId)?.name ||
+    "JW Marriott Miami Turnberry Resort & Spa";
+
   const uniqueDates = analytics
     ? [...new Set(analytics.slots.map((s) => s.date))]
     : [];
@@ -116,206 +127,280 @@ export default function BusyAnalyticsDashboard() {
       : [];
 
   return (
-    <div className="dashboard">
-      <header className="dashboard-header">
-        <h1>Hotel Amenity Busy Analytics</h1>
-        <p className="subtitle">Marriott Bonvoy — Smart Scheduling</p>
+    <div className="turnberry-shell">
+      <nav className="brand-bar" aria-label="Property navigation">
+        <div className="brand-lockup">
+          <span className="brand-mark">JW</span>
+          <div>
+            <span className="eyebrow">Marriott Bonvoy</span>
+            <strong>Turnberry Amenity Intelligence</strong>
+          </div>
+        </div>
+        <div className="nav-links" aria-hidden="true">
+          <span>Overview</span>
+          <span>Accommodations</span>
+          <span>Dining</span>
+          <span>Waterpark</span>
+          <span>Experiences</span>
+        </div>
+      </nav>
+
+      <header className="resort-hero">
+        <div className="hero-copy">
+          <span className="eyebrow">Aventura, Florida</span>
+          <h1>JW Marriott Miami Turnberry Resort &amp; Spa</h1>
+          <p>
+            A tropical resort command center for planning luxury stays, spa visits,
+            golf outings, waterpark days, and poolside escapes with real-time busy
+            analytics.
+          </p>
+          <div className="hero-actions" aria-label="Property highlights">
+            <span>Luxury resort</span>
+            <span>Tidal Cove Waterpark</span>
+            <span>Spa &amp; Wellness</span>
+          </div>
+        </div>
+
+        <div className="hero-visual" aria-label="Resort-inspired visual panel">
+          <div className="visual-card visual-card-primary">
+            <span>Smart Scheduling</span>
+            <strong>{amenity}</strong>
+            <small>{selectedProperty}</small>
+          </div>
+          <div className="visual-card visual-card-secondary">
+            <span>Next stay</span>
+            <strong>{checkIn}</strong>
+            <small>through {checkOut}</small>
+          </div>
+        </div>
       </header>
 
-      {/* Controls */}
-      <section className="controls">
-        <div className="control-group">
-          <label htmlFor="property">Property</label>
-          <select
-            id="property"
-            value={propertyId}
-            onChange={(e) => setPropertyId(e.target.value)}
-          >
-            {properties.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="control-group">
-          <label htmlFor="checkin">Check-in</label>
-          <input
-            id="checkin"
-            type="date"
-            value={checkIn}
-            onChange={(e) => setCheckIn(e.target.value)}
-          />
-        </div>
-
-        <div className="control-group">
-          <label htmlFor="checkout">Check-out</label>
-          <input
-            id="checkout"
-            type="date"
-            value={checkOut}
-            onChange={(e) => setCheckOut(e.target.value)}
-          />
-        </div>
-
-        <div className="control-group">
-          <label htmlFor="amenity">Amenity</label>
-          <select
-            id="amenity"
-            value={amenity}
-            onChange={(e) => setAmenity(e.target.value)}
-          >
-            {amenityTypes.map((a) => (
-              <option key={a} value={a}>
-                {a}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <button
-          className="btn btn-primary"
-          onClick={loadAnalytics}
-          disabled={loading}
-        >
-          {loading ? "Loading…" : "Get Busy Analytics"}
-        </button>
+      <section className="resort-overview" aria-label="Resort overview highlights">
+        {RESORT_HIGHLIGHTS.map((item) => (
+          <article className="overview-card" key={item.label}>
+            <strong>{item.value}</strong>
+            <span>{item.label}</span>
+          </article>
+        ))}
       </section>
 
-      {/* Date tabs */}
-      {uniqueDates.length > 0 && (
-        <section className="date-tabs">
-          {uniqueDates.map((d) => (
-            <button
-              key={d}
-              className={`date-tab ${selectedDate === d ? "active" : ""}`}
-              onClick={() => {
-                setSelectedDate(d);
-                setSelectedSlot(null);
-              }}
-            >
-              {d}
-            </button>
-          ))}
+      <main className="dashboard">
+        <section className="intro-section">
+          <span className="eyebrow">Amenity Planner</span>
+          <h2>Find the best time to enjoy the resort</h2>
+          <p>
+            Choose a property, stay window, and amenity to see demand patterns,
+            available capacity, and recommended booking windows.
+          </p>
         </section>
-      )}
 
-      {/* Bar chart */}
-      {chartData.length > 0 && (
-        <section className="chart-section">
-          <h2>
-            Busy Heatmap — {amenity} on {selectedDate}
-          </h2>
-          <ResponsiveContainer width="100%" height={350}>
-            <BarChart
-              data={chartData}
-              onClick={(e) => {
-                if (e && e.activePayload) {
-                  setSelectedSlot(e.activePayload[0].payload.slotId);
-                }
-              }}
+        <section className="controls booking-panel" aria-label="Amenity analytics controls">
+          <div className="control-group property-control">
+            <label htmlFor="property">Property</label>
+            <select
+              id="property"
+              value={propertyId}
+              onChange={(e) => setPropertyId(e.target.value)}
             >
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="timeSlot" />
-              <YAxis domain={[0, 1]} />
-              <Tooltip
-                formatter={(value, name) => [
-                  typeof value === "number" ? value.toFixed(2) : value,
-                  name,
-                ]}
-              />
-              <Legend />
-              <Bar dataKey="busyScore" name="Busy Score">
-                {chartData.map((entry, idx) => (
-                  <Cell
-                    key={idx}
-                    fill={busyColor(entry.busyScore)}
-                    stroke={
-                      selectedSlot === entry.slotId ? "#1a237e" : "transparent"
-                    }
-                    strokeWidth={selectedSlot === entry.slotId ? 3 : 0}
-                  />
-                ))}
-              </Bar>
-              <Bar dataKey="demandScore" name="Demand Score" fill="#42a5f5" />
-            </BarChart>
-          </ResponsiveContainer>
-
-          {selectedSlot && (
-            <div className="selected-info">
-              <p>
-                <strong>Selected:</strong> {selectedSlot}
-              </p>
-              {(() => {
-                const s = chartData.find((c) => c.slotId === selectedSlot);
-                return s ? (
-                  <p>
-                    Capacity: {s.capacity} | Booked: {s.booked} | Available:{" "}
-                    {s.available} | Status: {s.status}
-                  </p>
-                ) : null;
-              })()}
-            </div>
-          )}
-
-          {/* Booking actions */}
-          <div className="actions">
-            <button
-              className="btn btn-reserve"
-              onClick={() => handleEvent("RESERVE")}
-            >
-              Reserve
-            </button>
-            <button
-              className="btn btn-cancel"
-              onClick={() => handleEvent("CANCEL")}
-            >
-              Cancel
-            </button>
-            <button
-              className="btn btn-waitlist"
-              onClick={() => handleEvent("WAITLIST")}
-            >
-              Join Waitlist
-            </button>
+              {properties.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
           </div>
 
-          {eventMessage && <p className="event-msg">{eventMessage}</p>}
-        </section>
-      )}
+          <div className="control-group">
+            <label htmlFor="checkin">Check-in</label>
+            <input
+              id="checkin"
+              type="date"
+              value={checkIn}
+              onChange={(e) => setCheckIn(e.target.value)}
+            />
+          </div>
 
-      {/* Smart Recommendations */}
-      {recommendations.length > 0 && (
-        <section className="recommendations">
-          <h2>Smart Recommendations</h2>
-          <div className="rec-grid">
-            {recommendations.map((rec) => (
-              <div
-                key={rec.slot_id}
-                className={`rec-card ${selectedSlot === rec.slot_id ? "selected" : ""}`}
+          <div className="control-group">
+            <label htmlFor="checkout">Check-out</label>
+            <input
+              id="checkout"
+              type="date"
+              value={checkOut}
+              onChange={(e) => setCheckOut(e.target.value)}
+            />
+          </div>
+
+          <div className="control-group amenity-control">
+            <label htmlFor="amenity">Amenity</label>
+            <select
+              id="amenity"
+              value={amenity}
+              onChange={(e) => setAmenity(e.target.value)}
+            >
+              {amenityTypes.map((a) => (
+                <option key={a} value={a}>
+                  {a}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <button
+            className="btn btn-primary analytics-cta"
+            onClick={loadAnalytics}
+            disabled={loading}
+          >
+            {loading ? "Loading..." : "Get Busy Analytics"}
+          </button>
+        </section>
+
+        {uniqueDates.length > 0 && (
+          <section className="date-tabs" aria-label="Available stay dates">
+            {uniqueDates.map((d) => (
+              <button
+                key={d}
+                className={`date-tab ${selectedDate === d ? "active" : ""}`}
                 onClick={() => {
-                  setSelectedSlot(rec.slot_id);
-                  setSelectedDate(rec.date);
+                  setSelectedDate(d);
+                  setSelectedSlot(null);
                 }}
               >
-                <div className="rec-header">
-                  <span className="rec-date">{rec.date}</span>
-                  <span className="rec-time">{rec.time_slot}</span>
-                </div>
-                <div
-                  className="rec-score"
-                  style={{ color: busyColor(rec.busy_score) }}
-                >
-                  Busy: {(rec.busy_score * 100).toFixed(0)}%
-                </div>
-                <p className="rec-reason">{rec.reason}</p>
-                <p className="rec-avail">{rec.available} spots available</p>
-              </div>
+                {d}
+              </button>
             ))}
-          </div>
-        </section>
-      )}
+          </section>
+        )}
+
+        {chartData.length > 0 && (
+          <section className="chart-section resort-panel">
+            <div className="section-heading">
+              <span className="eyebrow">Live Capacity</span>
+              <h2>
+                Busy Heatmap - {amenity} on {selectedDate}
+              </h2>
+              <p>
+                Compare busy score and demand score by time block, then reserve,
+                cancel, or join the waitlist for the selected slot.
+              </p>
+            </div>
+
+            <div className="chart-frame">
+              <ResponsiveContainer width="100%" height={350}>
+                <BarChart
+                  data={chartData}
+                  onClick={(e) => {
+                    if (e && e.activePayload) {
+                      setSelectedSlot(e.activePayload[0].payload.slotId);
+                    }
+                  }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="timeSlot" />
+                  <YAxis domain={[0, 1]} />
+                  <Tooltip
+                    formatter={(value, name) => [
+                      typeof value === "number" ? value.toFixed(2) : value,
+                      name,
+                    ]}
+                  />
+                  <Legend />
+                  <Bar dataKey="busyScore" name="Busy Score">
+                    {chartData.map((entry, idx) => (
+                      <Cell
+                        key={idx}
+                        fill={busyColor(entry.busyScore)}
+                        stroke={
+                          selectedSlot === entry.slotId ? "#1f1b17" : "transparent"
+                        }
+                        strokeWidth={selectedSlot === entry.slotId ? 3 : 0}
+                      />
+                    ))}
+                  </Bar>
+                  <Bar dataKey="demandScore" name="Demand Score" fill="#b89154" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            {selectedSlot && (
+              <div className="selected-info">
+                <p>
+                  <strong>Selected:</strong> {selectedSlot}
+                </p>
+                {(() => {
+                  const s = chartData.find((c) => c.slotId === selectedSlot);
+                  return s ? (
+                    <p>
+                      Capacity: {s.capacity} | Booked: {s.booked} | Available:{" "}
+                      {s.available} | Status: {s.status}
+                    </p>
+                  ) : null;
+                })()}
+              </div>
+            )}
+
+            <div className="actions">
+              <button
+                className="btn btn-reserve"
+                onClick={() => handleEvent("RESERVE")}
+              >
+                Reserve
+              </button>
+              <button
+                className="btn btn-cancel"
+                onClick={() => handleEvent("CANCEL")}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-waitlist"
+                onClick={() => handleEvent("WAITLIST")}
+              >
+                Join Waitlist
+              </button>
+            </div>
+
+            {eventMessage && <p className="event-msg">{eventMessage}</p>}
+          </section>
+        )}
+
+        {recommendations.length > 0 && (
+          <section className="recommendations resort-panel">
+            <div className="section-heading">
+              <span className="eyebrow">Personalized Planning</span>
+              <h2>Smart Recommendations</h2>
+              <p>
+                The calmest windows across your stay, styled as a premium resort
+                concierge would present them.
+              </p>
+            </div>
+            <div className="rec-grid">
+              {recommendations.map((rec) => (
+                <div
+                  key={rec.slot_id}
+                  className={`rec-card ${selectedSlot === rec.slot_id ? "selected" : ""}`}
+                  onClick={() => {
+                    setSelectedSlot(rec.slot_id);
+                    setSelectedDate(rec.date);
+                  }}
+                >
+                  <div className="rec-header">
+                    <span className="rec-date">{rec.date}</span>
+                    <span className="rec-time">{rec.time_slot}</span>
+                  </div>
+                  <div
+                    className="rec-score"
+                    style={{ color: busyColor(rec.busy_score) }}
+                  >
+                    Busy: {(rec.busy_score * 100).toFixed(0)}%
+                  </div>
+                  <p className="rec-reason">{rec.reason}</p>
+                  <p className="rec-avail">{rec.available} spots available</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+      </main>
     </div>
   );
 }
