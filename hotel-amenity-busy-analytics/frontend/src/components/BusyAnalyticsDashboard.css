@@ -1870,3 +1870,91 @@ input {
     flex-direction: column;
   }
 }
+
+
+/* Multi-amenity toolbar and action states */
+.multi-amenity-toolbar {
+  grid-template-columns: minmax(180px, 0.45fr) minmax(180px, 0.45fr) minmax(360px, 1fr) auto;
+  align-items: stretch;
+}
+
+.multi-select-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.multi-select-panel > span {
+  color: #8b6f47;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.multi-select-chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.multi-select-chip {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  gap: 7px;
+  padding: 0 12px;
+  border: 1px solid #d8d1c8;
+  border-radius: 999px;
+  background: #fff;
+  color: #43382f;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.multi-select-chip.selected {
+  border-color: #1f6f9f;
+  background: #edf6fb;
+  color: #1f6f9f;
+}
+
+.multi-select-chip input {
+  width: 14px;
+  height: 14px;
+  accent-color: #1f6f9f;
+}
+
+.table-action-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.table-action.state-reserved {
+  border-color: #2e7d32;
+  background: #e8f4ea;
+  color: #2e7d32;
+}
+
+.table-action.state-cancel {
+  border-color: #8b1e1e;
+  color: #8b1e1e;
+}
+
+.table-action.state-cancelled {
+  border-color: #8b1e1e;
+  background: #faeaea;
+  color: #8b1e1e;
+}
+
+.table-action.state-waitlisted {
+  border-color: #8b6f47;
+  background: #f6efe4;
+  color: #6e542e;
+}
+
+@media (max-width: 1100px) {
+  .multi-amenity-toolbar {
+    grid-template-columns: 1fr;
+  }
+}

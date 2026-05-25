@@ -1,11 +1,14 @@
 """Reserve, cancel, waitlist, and guest schedule logic for amenity slots."""
 
+import logging
+
 from services.csv_dataset_service import get_slots_from_datasets, update_dataset_for_event
 from services.score_service import recalculate_slot_scores
 
 _active_slots: dict[str, list[dict]] = {}
 _loaded_ranges: dict[str, tuple[str, str]] = {}
 _guest_schedules: dict[str, list[dict]] = {}
+logger = logging.getLogger("uvicorn.error")
 
 
 def _ensure_loaded(property_id: str, check_in: str, check_out: str) -> list[dict]:
@@ -86,6 +89,20 @@ def _slot_result(
     recalculate_slot_scores(slot)
     if log_event and guest_id:
         update_dataset_for_event(slot, event_type, guest_id, message)
+        logger.info(
+            "amenity_event event_type=%s property_id=%s guest_id=%s slot_id=%s amenity=%s date=%s time_slot=%s booked=%s available=%s waitlist=%s message=%s",
+            event_type,
+            slot.get("propertyId"),
+            guest_id,
+            slot.get("slotId"),
+            slot.get("amenity"),
+            slot.get("date"),
+            slot.get("timeSlot"),
+            slot.get("booked"),
+            slot.get("available"),
+            slot.get("waitlist"),
+            message,
+        )
     return {
         "success": success,
         "message": message,

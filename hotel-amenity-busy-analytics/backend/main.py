@@ -1,5 +1,7 @@
 """FastAPI application - Hotel Amenity Busy Analytics API."""
 
+import logging
+
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -29,6 +31,8 @@ from services.booking_service import (
 from services.csv_dataset_service import recent_events, seed_csv_datasets
 from services.guest_service import check_in_guest, get_guest, save_guest_consent
 from services.analytics_service import get_busy_analytics, get_recommendations
+
+logging.basicConfig(level=logging.INFO)
 
 app = FastAPI(
     title="Hotel Amenity Busy Analytics API",

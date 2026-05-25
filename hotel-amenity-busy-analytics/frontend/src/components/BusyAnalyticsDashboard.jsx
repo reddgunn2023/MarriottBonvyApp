@@ -91,8 +91,9 @@ export default function BusyAnalyticsDashboard() {
   const [guestName, setGuestName] = useState("Taylor Bonvoy");
   const [checkedIn, setCheckedIn] = useState(false);
   const [planEnabled, setPlanEnabled] = useState(false);
-  const [analytics, setAnalytics] = useState(null);
-  const [recommendations, setRecommendations] = useState([]);
+  const [analyticsByAmenity, setAnalyticsByAmenity] = useState({});
+  const [recommendationsByAmenity, setRecommendationsByAmenity] = useState({});
+  const [actionStates, setActionStates] = useState({});
   const [eventMessage, setEventMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [, setGuestSchedule] = useState([]);
@@ -119,7 +120,6 @@ export default function BusyAnalyticsDashboard() {
   );
 
   const tripPropertyName = selectedProperty?.name || DEFAULT_HOTEL_NAME;
-  const availableAmenityTypes = amenityTypes.filter((item) => selectedAmenities.includes(item));
   const featuredItems = activeFeatureTab === "hotel"
     ? HOTEL_SERVICES_ONSITE
     : activeFeatureTab === "room"
@@ -135,8 +135,9 @@ export default function BusyAnalyticsDashboard() {
         ? "All Amenities & Services On-Site"
         : "Property Amenities On-Site";
 
-  const metricRows = analytics?.slots || [];
-  const chartData = metricRows.slice(0, 96).map((slot) => ({
+  const selectedAmenityList = selectedAmenities.length ? selectedAmenities : amenityTypes;
+  const analyticsEntries = Object.entries(analyticsByAmenity);
+  const chartDataFor = (slots) => slots.slice(0, 96).map((slot) => ({
     label: `${slot.date.slice(5)} ${slot.time_slot.split("-")[0]}`,
     busyScore: slot.busy_score,
     demandScore: slot.demand_score,
@@ -148,16 +149,22 @@ export default function BusyAnalyticsDashboard() {
   }, []);
 
   const loadAnalytics = useCallback(async (clearMessage = true) => {
-    if (!amenity) return;
+    const amenitiesToLoad = selectedAmenityList.filter(Boolean);
+    if (!amenitiesToLoad.length) return;
     setLoading(true);
     if (clearMessage) setEventMessage("");
     try {
-      const [analyticsData, recData] = await Promise.all([
-        fetchBusyAnalytics(propertyId, amenity, checkIn, checkOut),
-        fetchRecommendations(propertyId, amenity, checkIn, checkOut),
-      ]);
-      setAnalytics(analyticsData);
-      setRecommendations(recData.recommendations || []);
+      const results = await Promise.all(
+        amenitiesToLoad.map(async (item) => {
+          const [analyticsData, recData] = await Promise.all([
+            fetchBusyAnalytics(propertyId, item, checkIn, checkOut),
+            fetchRecommendations(propertyId, item, checkIn, checkOut),
+          ]);
+          return [item, analyticsData, recData.recommendations || []];
+        }),
+      );
+      setAnalyticsByAmenity(Object.fromEntries(results.map(([item, analyticsData]) => [item, analyticsData.slots || []])));
+      setRecommendationsByAmenity(Object.fromEntries(results.map(([item, , recs]) => [item, recs])));
       await loadSchedule();
     } catch (err) {
       console.error(err);
@@ -165,7 +172,7 @@ export default function BusyAnalyticsDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [propertyId, amenity, checkIn, checkOut, loadSchedule]);
+  }, [propertyId, selectedAmenityList, checkIn, checkOut, loadSchedule]);
 
   const handleCheckIn = async () => {
     const guest = await checkInGuest({
@@ -207,6 +214,14 @@ export default function BusyAnalyticsDashboard() {
   const handleEvent = async (slotId, eventType) => {
     try {
       const result = await postEvent(propertyId, slotId, eventType, GUEST_ID);
+      setActionStates((current) => ({
+        ...current,
+        [slotId]: eventType === "RESERVE"
+          ? "RESERVED"
+          : eventType === "CANCEL"
+            ? "CANCELLED"
+            : "WAITLISTED",
+      }));
       setEventMessage(result.message);
       await loadSchedule();
       await loadAnalytics(false);
@@ -329,23 +344,37 @@ export default function BusyAnalyticsDashboard() {
               </div>
             </section>
 
-            <section className="enterprise-toolbar enterprise-card">
-              <div className="control-group amenity-control">
-                <label htmlFor="amenity">Amenity / Service</label>
-                <select id="amenity" value={amenity} onChange={(event) => setAmenity(event.target.value)}>
-                  {availableAmenityTypes.map((item) => <option key={item} value={item}>{item}</option>)}
-                </select>
+            <section className="enterprise-toolbar enterprise-card multi-amenity-toolbar">
+              <div className="stay-range-inline">
+                <span>Checkin Date:</span><strong>{checkIn}</strong>
               </div>
-              <div className="stay-range-inline"><span>Metrics interval</span><strong>Every 30 minutes · {checkIn} to {checkOut}</strong></div>
-              <button className="black-btn" onClick={() => loadAnalytics()} disabled={!amenity || loading}>{loading ? "Loading" : "View Analytics"}</button>
+              <div className="stay-range-inline">
+                <span>Checkout Date:</span><strong>{checkOut}</strong>
+              </div>
+              <div className="multi-select-panel">
+                <span>Amenities & Services</span>
+                <div className="multi-select-chip-grid">
+                  {amenityTypes.map((item) => (
+                    <label className={`multi-select-chip ${selectedAmenities.includes(item) ? "selected" : ""}`} key={item}>
+                      <input
+                        type="checkbox"
+                        checked={selectedAmenities.includes(item)}
+                        onChange={() => toggleAmenityFilter(item)}
+                      />
+                      {item}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <button className="black-btn" onClick={() => loadAnalytics()} disabled={!selectedAmenityList.length || loading}>{loading ? "Loading" : "View Analytics"}</button>
             </section>
 
-            {metricRows.length > 0 && (
-              <section className="enterprise-card analytics-workspace">
-                <div className="analytics-heading"><div><span className="eyebrow">Stay Range Metrics</span><h2>{amenity}</h2><p>Busy, demand, and forecast metrics are shown in 30-minute intervals from check-in to checkout.</p></div></div>
+            {analyticsEntries.length > 0 && analyticsEntries.map(([amenityName, rows]) => (
+              <section className="enterprise-card analytics-workspace" key={amenityName}>
+                <div className="analytics-heading"><div><span className="eyebrow">Stay Range Metrics</span><h2>{amenityName}</h2><p>Busy, demand, and forecast metrics are shown in 30-minute intervals from check-in to checkout.</p></div></div>
                 <div className="enterprise-chart-frame">
                   <ResponsiveContainer width="100%" height={320}>
-                    <BarChart data={chartData}>
+                    <BarChart data={chartDataFor(rows)}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="label" hide />
                       <YAxis domain={[0, 1.5]} />
@@ -354,7 +383,7 @@ export default function BusyAnalyticsDashboard() {
                       <Bar dataKey="busyScore" name="Busy" fill="#1f6f9f" />
                       <Bar dataKey="demandScore" name="Demand" fill="#8b6f47" />
                       <Bar dataKey="futureBusy" name="Forecast" fill="#556b58">
-                        {chartData.map((entry, index) => <Cell key={`${entry.label}-${index}`} fill={busyColor(entry.futureBusy)} />)}
+                        {chartDataFor(rows).map((entry, index) => <Cell key={`${entry.label}-${index}`} fill={busyColor(entry.futureBusy)} />)}
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>
@@ -363,12 +392,23 @@ export default function BusyAnalyticsDashboard() {
                   <table className="metrics-table">
                     <thead><tr><th>Date</th><th>30-min interval</th><th>Busy</th><th>Demand</th><th>Forecast</th><th>Weather</th><th>Traffic</th><th>Availability</th><th>Action</th></tr></thead>
                     <tbody>
-                      {metricRows.map((slot) => {
+                      {rows.map((slot) => {
                         const full = slot.available <= 0 || slot.status === "FULL";
+                        const actionState = actionStates[slot.slot_id];
                         return (
                           <tr key={slot.slot_id}>
                             <td>{slot.date}</td><td>{slot.time_slot}</td><td>{slot.busy_score.toFixed(2)}</td><td>{slot.demand_score.toFixed(2)}</td><td>{slot.future_busy.toFixed(2)}</td><td>{slot.weather_condition || "Clear"}</td><td>{slot.traffic_condition || "Light"}</td><td>{full ? "Full" : `${slot.available} open`}</td>
-                            <td><button className="table-action" onClick={() => handleEvent(slot.slot_id, full ? "WAITLIST" : "RESERVE")}>{full ? "Join Waitlist" : "Reserve"}</button></td>
+                            <td>
+                              {actionState === "RESERVED" ? (
+                                <div className="table-action-group"><button className="table-action state-reserved" disabled>Reserved</button><button className="table-action state-cancel" onClick={() => handleEvent(slot.slot_id, "CANCEL")}>Cancel</button></div>
+                              ) : actionState === "CANCELLED" ? (
+                                <button className="table-action state-cancelled" disabled>Cancelled</button>
+                              ) : actionState === "WAITLISTED" ? (
+                                <button className="table-action state-waitlisted" disabled>Added to Waiting List</button>
+                              ) : (
+                                <button className="table-action" onClick={() => handleEvent(slot.slot_id, full ? "WAITLIST" : "RESERVE")}>{full ? "Join Waiting Line" : "Reserve"}</button>
+                              )}
+                            </td>
                           </tr>
                         );
                       })}
@@ -377,13 +417,15 @@ export default function BusyAnalyticsDashboard() {
                 </div>
                 {eventMessage && <p className="event-msg enterprise-event-msg">{eventMessage}</p>}
               </section>
-            )}
+            ))}
 
-            {recommendations.length > 0 && (
+            {Object.values(recommendationsByAmenity).some((items) => items.length > 0) && (
               <section className="enterprise-card smart-recommendations-panel">
                 <div className="section-heading"><span className="eyebrow">Smart Recommendations</span><h2>Recommended Planning Windows</h2></div>
                 <div className="enterprise-rec-list">
-                  {recommendations.map((rec) => <article key={rec.slot_id}><strong>{rec.date} · {rec.time_slot}</strong><p>{rec.reason}</p></article>)}
+                  {Object.entries(recommendationsByAmenity).flatMap(([amenityName, recs]) =>
+                    recs.map((rec) => <article key={`${amenityName}-${rec.slot_id}`}><strong>{amenityName} · {rec.date} · {rec.time_slot}</strong><p>{rec.reason}</p></article>),
+                  )}
                 </div>
               </section>
             )}
