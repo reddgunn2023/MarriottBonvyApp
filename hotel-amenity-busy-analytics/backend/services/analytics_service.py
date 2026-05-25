@@ -1,5 +1,6 @@
 """Busy-time analytics and smart recommendations for amenity slots."""
 
+from data.mock_slots import is_slot_open_for_amenity
 from services.score_service import enrich_slots_with_scores
 
 
@@ -8,7 +9,10 @@ def get_busy_analytics(
     amenity: str,
 ) -> list[dict]:
     """Filter slots for the requested amenity and enrich with scores."""
-    filtered = [s for s in slots if s["amenity"] == amenity]
+    filtered = [
+        s for s in slots
+        if s["amenity"] == amenity and is_slot_open_for_amenity(s)
+    ]
     return enrich_slots_with_scores(filtered)
 
 

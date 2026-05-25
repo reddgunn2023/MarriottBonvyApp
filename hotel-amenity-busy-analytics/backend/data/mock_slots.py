@@ -6,7 +6,7 @@ historical demand, and generated bookable time slots.
 """
 
 import copy
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 AMENITY_COLLECTIONS = [
     {
@@ -260,6 +260,50 @@ _HISTORICAL_BUSY_DATA = [
 ]
 
 _WEEKEND_BOOST = 0.15
+
+
+def _time_to_minutes(value: str) -> int:
+    """Parse either 24-hour HH:MM or display times like 6:30 AM."""
+    cleaned = value.strip().upper()
+    for fmt in ("%H:%M", "%I:%M %p", "%I %p"):
+        try:
+            parsed = datetime.strptime(cleaned, fmt)
+            return parsed.hour * 60 + parsed.minute
+        except ValueError:
+            continue
+    raise ValueError(f"Unsupported time format: {value}")
+
+
+def _hours_for_date(amenity: dict, current_date: date) -> dict | None:
+    hours = amenity.get("hours")
+    if not hours:
+        return None
+    if current_date.weekday() >= 5:
+        window = hours.get("saturday_sunday") or hours.get("weekend")
+    else:
+        window = hours.get("monday_friday") or hours.get("weekday")
+    if not window or "-" not in window:
+        return None
+    open_time, close_time = window.split("-", 1)
+    return {
+        "open": _time_to_minutes(open_time),
+        "close": _time_to_minutes(close_time),
+    }
+
+
+def is_slot_open_for_amenity(slot: dict) -> bool:
+    """Return whether a generated slot falls within the amenity's operating hours."""
+    amenity = _AMENITY_BY_NAME.get(slot.get("amenity"))
+    if not amenity:
+        return True
+    window = _hours_for_date(amenity, date.fromisoformat(slot["date"]))
+    if not window:
+        return True
+    slot_start = _time_to_minutes(slot["timeSlot"].split("-", 1)[0])
+    slot_end = _time_to_minutes(slot["timeSlot"].split("-", 1)[1])
+    if slot_end <= slot_start:
+        slot_end += 24 * 60
+    return slot_start >= window["open"] and slot_end <= window["close"]
 
 
 def get_property_amenities(property_id: str) -> list[dict]:
