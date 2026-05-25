@@ -1958,3 +1958,82 @@ input {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Clickable chart slot details */
+.slot-detail-card,
+.slot-detail-empty {
+  margin-top: 20px;
+  border: 1px solid #e3ddd5;
+  border-radius: 14px;
+  background: #fffdf9;
+}
+
+.slot-detail-card {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.8fr) minmax(320px, 1.2fr) auto;
+  gap: 22px;
+  align-items: center;
+  padding: 20px;
+}
+
+.slot-detail-card h3 {
+  margin: 6px 0;
+  color: #2c241d;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 2rem;
+  font-weight: 500;
+}
+
+.slot-detail-card p {
+  color: #666;
+}
+
+.slot-detail-card dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.slot-detail-card dl div {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #f7f3ee;
+}
+
+.slot-detail-card dt {
+  color: #8b6f47;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.slot-detail-card dd {
+  margin: 0;
+  color: #24201c;
+  font-weight: 800;
+}
+
+.slot-detail-actions {
+  justify-self: end;
+}
+
+.slot-detail-empty {
+  padding: 18px 20px;
+  color: #665c52;
+  font-weight: 700;
+}
+
+@media (max-width: 1100px) {
+  .slot-detail-card {
+    grid-template-columns: 1fr;
+  }
+
+  .slot-detail-actions {
+    justify-self: start;
+  }
+}

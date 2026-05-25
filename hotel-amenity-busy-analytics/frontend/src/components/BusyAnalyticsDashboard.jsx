@@ -94,6 +94,7 @@ export default function BusyAnalyticsDashboard() {
   const [analyticsByAmenity, setAnalyticsByAmenity] = useState({});
   const [recommendationsByAmenity, setRecommendationsByAmenity] = useState({});
   const [actionStates, setActionStates] = useState({});
+  const [selectedSlotsByAmenity, setSelectedSlotsByAmenity] = useState({});
   const [eventMessage, setEventMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [, setGuestSchedule] = useState([]);
@@ -137,11 +138,13 @@ export default function BusyAnalyticsDashboard() {
 
   const selectedAmenityList = selectedAmenities.length ? selectedAmenities : amenityTypes;
   const analyticsEntries = Object.entries(analyticsByAmenity);
-  const chartDataFor = (slots) => slots.slice(0, 96).map((slot) => ({
-    label: `${slot.date.slice(5)} ${slot.time_slot.split("-")[0]}`,
+  const chartDataFor = (slots) => slots.map((slot) => ({
+    label: slot.time_slot,
+    date: slot.date,
     busyScore: slot.busy_score,
     demandScore: slot.demand_score,
     futureBusy: slot.future_busy,
+    slot,
   }));
 
   const loadSchedule = useCallback(async () => {
@@ -229,6 +232,30 @@ export default function BusyAnalyticsDashboard() {
       console.error(err);
       setEventMessage("Event failed");
     }
+  };
+
+  const slotAction = (slot) => {
+    const full = slot.available <= 0 || slot.status === "FULL";
+    const actionState = actionStates[slot.slot_id];
+    if (actionState === "RESERVED") {
+      return (
+        <div className="table-action-group">
+          <button className="table-action state-reserved" disabled>Reserved</button>
+          <button className="table-action state-cancel" onClick={() => handleEvent(slot.slot_id, "CANCEL")}>Cancel</button>
+        </div>
+      );
+    }
+    if (actionState === "CANCELLED") {
+      return <button className="table-action state-cancelled" disabled>Cancelled</button>;
+    }
+    if (actionState === "WAITLISTED") {
+      return <button className="table-action state-waitlisted" disabled>Added to Waiting List</button>;
+    }
+    return (
+      <button className="table-action" onClick={() => handleEvent(slot.slot_id, full ? "WAITLIST" : "RESERVE")}>
+        {full ? "Join Waiting Line" : "Reserve"}
+      </button>
+    );
   };
 
   if (view === "landing") {
@@ -373,48 +400,62 @@ export default function BusyAnalyticsDashboard() {
               <section className="enterprise-card analytics-workspace" key={amenityName}>
                 <div className="analytics-heading"><div><span className="eyebrow">Stay Range Metrics</span><h2>{amenityName}</h2><p>Busy, demand, and forecast metrics are shown in 30-minute intervals from check-in to checkout.</p></div></div>
                 <div className="enterprise-chart-frame">
-                  <ResponsiveContainer width="100%" height={320}>
-                    <BarChart data={chartDataFor(rows)}>
+                  <ResponsiveContainer width="100%" height={360}>
+                    <BarChart
+                      data={chartDataFor(rows)}
+                      onClick={(event) => {
+                        const slot = event?.activePayload?.[0]?.payload?.slot;
+                        if (slot) {
+                          setSelectedSlotsByAmenity((current) => ({ ...current, [amenityName]: slot }));
+                        }
+                      }}
+                    >
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="label" hide />
+                      <XAxis
+                        dataKey="label"
+                        interval="preserveStartEnd"
+                        minTickGap={18}
+                        angle={-35}
+                        textAnchor="end"
+                        height={72}
+                      />
                       <YAxis domain={[0, 1.5]} />
-                      <Tooltip formatter={(value, name) => [typeof value === "number" ? value.toFixed(2) : value, name]} />
+                      <Tooltip
+                        formatter={(value, name) => [typeof value === "number" ? value.toFixed(2) : value, name]}
+                        labelFormatter={(_label, payload) => {
+                          const slot = payload?.[0]?.payload?.slot;
+                          return slot ? `${slot.date} · ${slot.time_slot}` : _label;
+                        }}
+                      />
                       <Legend />
-                      <Bar dataKey="busyScore" name="Busy" fill="#1f6f9f" />
-                      <Bar dataKey="demandScore" name="Demand" fill="#8b6f47" />
-                      <Bar dataKey="futureBusy" name="Forecast" fill="#556b58">
-                        {chartDataFor(rows).map((entry, index) => <Cell key={`${entry.label}-${index}`} fill={busyColor(entry.futureBusy)} />)}
+                      <Bar dataKey="busyScore" name="Busy" fill="#1f6f9f" cursor="pointer" isAnimationActive={false} onClick={(data) => data?.slot && setSelectedSlotsByAmenity((current) => ({ ...current, [amenityName]: data.slot }))} />
+                      <Bar dataKey="demandScore" name="Demand" fill="#8b6f47" cursor="pointer" isAnimationActive={false} onClick={(data) => data?.slot && setSelectedSlotsByAmenity((current) => ({ ...current, [amenityName]: data.slot }))} />
+                      <Bar dataKey="futureBusy" name="Forecast" fill="#556b58" cursor="pointer" isAnimationActive={false} onClick={(data) => data?.slot && setSelectedSlotsByAmenity((current) => ({ ...current, [amenityName]: data.slot }))}>
+                        {chartDataFor(rows).map((entry, index) => <Cell key={`${entry.date}-${entry.label}-${index}`} fill={busyColor(entry.futureBusy)} />)}
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
-                <div className="metrics-table-wrap">
-                  <table className="metrics-table">
-                    <thead><tr><th>Date</th><th>30-min interval</th><th>Busy</th><th>Demand</th><th>Forecast</th><th>Weather</th><th>Traffic</th><th>Availability</th><th>Action</th></tr></thead>
-                    <tbody>
-                      {rows.map((slot) => {
-                        const full = slot.available <= 0 || slot.status === "FULL";
-                        const actionState = actionStates[slot.slot_id];
-                        return (
-                          <tr key={slot.slot_id}>
-                            <td>{slot.date}</td><td>{slot.time_slot}</td><td>{slot.busy_score.toFixed(2)}</td><td>{slot.demand_score.toFixed(2)}</td><td>{slot.future_busy.toFixed(2)}</td><td>{slot.weather_condition || "Clear"}</td><td>{slot.traffic_condition || "Light"}</td><td>{full ? "Full" : `${slot.available} open`}</td>
-                            <td>
-                              {actionState === "RESERVED" ? (
-                                <div className="table-action-group"><button className="table-action state-reserved" disabled>Reserved</button><button className="table-action state-cancel" onClick={() => handleEvent(slot.slot_id, "CANCEL")}>Cancel</button></div>
-                              ) : actionState === "CANCELLED" ? (
-                                <button className="table-action state-cancelled" disabled>Cancelled</button>
-                              ) : actionState === "WAITLISTED" ? (
-                                <button className="table-action state-waitlisted" disabled>Added to Waiting List</button>
-                              ) : (
-                                <button className="table-action" onClick={() => handleEvent(slot.slot_id, full ? "WAITLIST" : "RESERVE")}>{full ? "Join Waiting Line" : "Reserve"}</button>
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                {selectedSlotsByAmenity[amenityName] ? (
+                  <div className="slot-detail-card">
+                    <div>
+                      <span className="eyebrow">Selected 30-minute slot</span>
+                      <h3>{selectedSlotsByAmenity[amenityName].time_slot}</h3>
+                      <p>{selectedSlotsByAmenity[amenityName].date} · {amenityName}</p>
+                    </div>
+                    <dl>
+                      <div><dt>Busy</dt><dd>{selectedSlotsByAmenity[amenityName].busy_score.toFixed(2)}</dd></div>
+                      <div><dt>Demand</dt><dd>{selectedSlotsByAmenity[amenityName].demand_score.toFixed(2)}</dd></div>
+                      <div><dt>Forecast</dt><dd>{selectedSlotsByAmenity[amenityName].future_busy.toFixed(2)}</dd></div>
+                      <div><dt>Weather</dt><dd>{selectedSlotsByAmenity[amenityName].weather_condition || "Clear"}</dd></div>
+                      <div><dt>Traffic</dt><dd>{selectedSlotsByAmenity[amenityName].traffic_condition || "Light"}</dd></div>
+                      <div><dt>Availability</dt><dd>{selectedSlotsByAmenity[amenityName].available <= 0 ? "Full" : `${selectedSlotsByAmenity[amenityName].available} open`}</dd></div>
+                    </dl>
+                    <div className="slot-detail-actions">{slotAction(selectedSlotsByAmenity[amenityName])}</div>
+                  </div>
+                ) : (
+                  <div className="slot-detail-empty">Click a bar to view that 30-minute slot and choose Reserve, Cancel, or Join Waiting Line.</div>
+                )}
                 {eventMessage && <p className="event-msg enterprise-event-msg">{eventMessage}</p>}
               </section>
             ))}
