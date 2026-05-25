@@ -12,12 +12,25 @@ from pathlib import Path
 
 from data.mock_slots import TIME_SLOTS, get_historical_busy_data
 
-SOURCE_DATASET = Path(
-    os.environ.get(
-        "HOTEL_AMENITY_DATASET_PATH",
-        "/Users/sgunn825/Documents/hotel_amenity_large_dataset_60days.csv",
-    )
-)
+REPO_ROOT = Path(__file__).resolve().parents[3]
+SOURCE_DATASET_CANDIDATES = [
+    REPO_ROOT / "src/data/hotel_amenity_large_dataset_60days.csv",
+    REPO_ROOT / "hotel-amenity-busy-analytics/src/data/hotel_amenity_large_dataset_60days.csv",
+    Path("/Users/sgunn825/Documents/hotel_amenity_large_dataset_60days.csv"),
+]
+
+
+def _source_dataset() -> Path:
+    override = os.environ.get("HOTEL_AMENITY_DATASET_PATH")
+    if override:
+        return Path(override)
+    for candidate in SOURCE_DATASET_CANDIDATES:
+        if candidate.exists():
+            return candidate
+    return SOURCE_DATASET_CANDIDATES[0]
+
+
+SOURCE_DATASET = _source_dataset()
 _MODEL = None
 _MODEL_READY = False
 

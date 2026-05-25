@@ -59,8 +59,8 @@ export default function BusyAnalyticsDashboard() {
   const [propertyId, setPropertyId] = useState("prop-001");
   const [amenity, setAmenity] = useState("Spa");
   const [selectedAmenities, setSelectedAmenities] = useState([]);
-  const [checkIn, setCheckIn] = useState(todayStr());
-  const [checkOut, setCheckOut] = useState(addDays(todayStr(), 3));
+  const [checkIn] = useState(todayStr());
+  const [checkOut] = useState(addDays(todayStr(), 3));
   const [guestName, setGuestName] = useState("Taylor Bonvoy");
   const [checkedIn, setCheckedIn] = useState(false);
   const [planEnabled, setPlanEnabled] = useState(false);
@@ -72,6 +72,7 @@ export default function BusyAnalyticsDashboard() {
   const [selectedDate, setSelectedDate] = useState(null);
   const [guestSchedule, setGuestSchedule] = useState([]);
   const [view, setView] = useState("landing");
+  const [showConsentModal, setShowConsentModal] = useState(false);
 
   useEffect(() => {
     async function loadInitialData() {
@@ -146,6 +147,7 @@ export default function BusyAnalyticsDashboard() {
       check_out: checkOut,
     });
     setCheckedIn(guest.checked_in);
+    setShowConsentModal(true);
     setEventMessage(`${guest.guest_name} checked in. You can now enable Plan Your Stay.`);
   };
 
@@ -159,6 +161,9 @@ export default function BusyAnalyticsDashboard() {
     });
     setPlanEnabled(guest.plan_your_stay_enabled);
     setSelectedAmenities(guest.selected_amenities);
+    if (guest.plan_your_stay_enabled) {
+      setShowConsentModal(false);
+    }
     setEventMessage(
       enabled
         ? "Guest consent captured. All selected amenities are enabled for planning."
@@ -388,6 +393,29 @@ export default function BusyAnalyticsDashboard() {
         </div>
       </nav>
 
+      {showConsentModal && (
+        <div className="consent-modal-backdrop" role="dialog" aria-modal="true">
+          <article className="consent-modal-card enhance-canvas">
+            <button
+              className="modal-close"
+              aria-label="Close consent dialog"
+              onClick={() => setShowConsentModal(false)}
+            >
+              ×
+            </button>
+            <button className="canvas-toggle" onClick={() => handlePlanToggle(true)}>
+              enable
+            </button>
+            <h3>Enhance Your Stay Experience</h3>
+            <p>
+              Enable Smart Amenity Insights to view real-time busy periods,
+              wait times, and personalized recommendations for amenities and
+              services during your stay.
+            </p>
+          </article>
+        </div>
+      )}
+
       <header className="resort-hero">
         <div className="hero-copy">
           <span className="eyebrow">Aventura, Florida</span>
@@ -511,24 +539,9 @@ export default function BusyAnalyticsDashboard() {
             </select>
           </div>
 
-          <div className="control-group">
-            <label htmlFor="checkin">Check-in</label>
-            <input
-              id="checkin"
-              type="date"
-              value={checkIn}
-              onChange={(e) => setCheckIn(e.target.value)}
-            />
-          </div>
-
-          <div className="control-group">
-            <label htmlFor="checkout">Check-out</label>
-            <input
-              id="checkout"
-              type="date"
-              value={checkOut}
-              onChange={(e) => setCheckOut(e.target.value)}
-            />
+          <div className="fixed-stay-summary">
+            <span>Fixed stay dates</span>
+            <strong>{checkIn} - {checkOut}</strong>
           </div>
 
           <div className="control-group amenity-control">
@@ -585,8 +598,6 @@ export default function BusyAnalyticsDashboard() {
                   onChange={() => toggleAmenityFilter(item.name)}
                 />
                 <span>{item.name}</span>
-                <small>{item.category} · {item.service_type.replace("_", " ")}</small>
-                <em>{item.description}</em>
               </label>
             ))}
           </div>

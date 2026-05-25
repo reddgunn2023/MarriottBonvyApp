@@ -13,8 +13,25 @@ from pathlib import Path
 from data.mock_slots import AMENITY_COLLECTIONS, TIME_SLOTS
 from services.score_service import calculate_busy_score, calculate_demand_score
 
-DEFAULT_SOURCE_DATASET = Path("/Users/sgunn825/Documents/hotel_amenity_large_dataset_60days.csv")
-SOURCE_DATASET = Path(os.environ.get("HOTEL_AMENITY_DATASET_PATH", DEFAULT_SOURCE_DATASET))
+REPO_ROOT = Path(__file__).resolve().parents[3]
+SOURCE_DATASET_CANDIDATES = [
+    REPO_ROOT / "src/data/hotel_amenity_large_dataset_60days.csv",
+    REPO_ROOT / "hotel-amenity-busy-analytics/src/data/hotel_amenity_large_dataset_60days.csv",
+    Path("/Users/sgunn825/Documents/hotel_amenity_large_dataset_60days.csv"),
+]
+
+
+def _source_dataset() -> Path:
+    override = os.environ.get("HOTEL_AMENITY_DATASET_PATH")
+    if override:
+        return Path(override)
+    for candidate in SOURCE_DATASET_CANDIDATES:
+        if candidate.exists():
+            return candidate
+    return SOURCE_DATASET_CANDIDATES[0]
+
+
+SOURCE_DATASET = _source_dataset()
 DATASET_DIR = Path(os.environ.get("HOTEL_AMENITY_DATASET_DIR", "/tmp/hotel-amenity-busy-analytics-datasets"))
 EVENT_LOG = DATASET_DIR / "reservation_event_log.csv"
 DATASET_FIELDS = [
@@ -373,6 +390,79 @@ def update_dataset_for_event(slot: dict, event_type: str, guest_id: str, message
                 "message": message,
             }
         )
+
+
+def _dataset_row_to_slot(row: dict, slot_index: int) -> dict:
+    capacity = max(_safe_int(row.get("capacity", 1)), 1)
+    booked = min(_safe_int(row.get("booked", 0)), capacity)
+    waitlist = max(_safe_int(row.get("waitlist", 0)), 0)
+    available = max(_safe_int(row.get("available", capacity - booked), capacity - booked), 0)
+    time_slot = row.get("time_slot", TIME_SLOTS[0])
+    try:
+        time_index = TIME_SLOTS.index(time_slot)
+    except ValueError:
+        time_index = slot_index % len(TIME_SLOTS)
+    amenity_id = row.get("amenity_id", _slug(row.get("amenity_name", "amenity")))
+    property_id = row.get("property_id", "prop-001")
+    slot_id = f"{property_id}-{amenity_id}-{row.get('date', date.today().isoformat())}-{time_index}"
+    normalized = _row_with_scores(
+        {
+            **row,
+            "capacity": str(capacity),
+            "booked": str(booked),
+            "available": str(available),
+            "waitlist": str(waitlist),
+        }
+    )
+    return {
+        "slotId": slot_id,
+        "propertyId": property_id,
+        "amenityId": amenity_id,
+        "amenity": row.get("amenity_name", amenity_id),
+        "category": row.get("category", "Service"),
+        "serviceType": row.get("service_type", "reservation"),
+        "date": row.get("date", date.today().isoformat()),
+        "timeSlot": time_slot,
+        "timeIndex": time_index,
+        "capacity": capacity,
+        "booked": booked,
+        "available": available,
+        "waitlist": waitlist,
+        "waitlistGuests": [],
+        "reservedGuests": [],
+        "weatherCondition": normalized.get("weather_condition", "clear"),
+        "trafficCondition": normalized.get("traffic_condition", "light"),
+        "busyScore": float(normalized.get("busy_score", 0)),
+        "demandScore": float(normalized.get("demand_score", 0)),
+        "futureBusy": float(normalized.get("forecast_score", 0)),
+        "status": "FULL" if available <= 0 else "AVAILABLE",
+    }
+
+
+def get_slots_from_datasets(
+    property_id: str = "prop-001",
+    check_in: str | None = None,
+    check_out: str | None = None,
+) -> list[dict]:
+    """Return bookable slots from the normalized CSV datasets."""
+    seed_csv_datasets()
+    start = date.fromisoformat(check_in) if check_in else None
+    end = date.fromisoformat(check_out) if check_out else None
+    slots = []
+    for path in sorted(DATASET_DIR.glob("*.csv")):
+        if path.name == EVENT_LOG.name:
+            continue
+        for idx, row in enumerate(_read_rows(path)):
+            row_property = row.get("property_id", property_id)
+            if row_property != property_id:
+                continue
+            row_date = row.get("date", "")
+            if start and row_date and date.fromisoformat(row_date) < start:
+                continue
+            if end and row_date and date.fromisoformat(row_date) >= end:
+                continue
+            slots.append(_dataset_row_to_slot(row, idx))
+    return slots
 
 
 def recent_events(limit: int = 25) -> list[dict]:
