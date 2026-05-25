@@ -39,6 +39,7 @@ def _source_dataset() -> Path:
 SOURCE_DATASET = _source_dataset()
 DATASET_DIR = Path(os.environ.get("HOTEL_AMENITY_DATASET_DIR", "/tmp/hotel-amenity-busy-analytics-datasets"))
 EVENT_LOG = DATASET_DIR / "reservation_event_log.csv"
+_SOURCE_ROWS_CACHE: list[dict] | None = None
 DATASET_FIELDS = [
     "date",
     "time_slot",
@@ -329,8 +330,12 @@ def _normalize_source_row(row: dict) -> dict | None:
 
 
 def _source_rows() -> list[dict]:
+    global _SOURCE_ROWS_CACHE
+    if _SOURCE_ROWS_CACHE is not None:
+        return _SOURCE_ROWS_CACHE
     if not SOURCE_DATASET.exists():
-        return []
+        _SOURCE_ROWS_CACHE = []
+        return _SOURCE_ROWS_CACHE
     if SOURCE_DATASET.suffix.lower() in {".xlsx", ".xslx"}:
         from openpyxl import load_workbook
 
@@ -338,9 +343,11 @@ def _source_rows() -> list[dict]:
         sheet = workbook.active
         iterator = sheet.iter_rows(values_only=True)
         headers = [str(value) if value is not None else "" for value in next(iterator)]
-        return [dict(zip(headers, row)) for row in iterator]
+        _SOURCE_ROWS_CACHE = [dict(zip(headers, row)) for row in iterator]
+        return _SOURCE_ROWS_CACHE
     with SOURCE_DATASET.open(newline="") as handle:
-        return list(csv.DictReader(handle))
+        _SOURCE_ROWS_CACHE = list(csv.DictReader(handle))
+        return _SOURCE_ROWS_CACHE
 
 
 def _seed_from_source() -> list[str]:
@@ -378,8 +385,33 @@ def dataset_properties() -> list[dict]:
     return list(properties.values())
 
 
+def _source_property_ids() -> list[str]:
+    ids: list[str] = []
+    seen: set[str] = set()
+    for row in _source_rows():
+        property_id = _get(row, "propertyId", "property_id", "property", default="")
+        if property_id and property_id not in seen:
+            seen.add(property_id)
+            ids.append(property_id)
+    return ids
+
+
+def canonical_property_id(property_id: str | None) -> str:
+    """Map legacy/unknown property ids to the first workbook property when active."""
+    if not SOURCE_DATASET.exists():
+        return property_id or "prop-001"
+    requested = property_id or ""
+    property_ids = _source_property_ids()
+    if requested in property_ids:
+        return requested
+    if requested.lower() in {"prop-001", "default", ""} and property_ids:
+        return property_ids[0]
+    return requested
+
+
 def dataset_property_amenities(property_id: str) -> list[dict]:
     """Return only amenities/services present in the workbook/runtime rows for a property."""
+    property_id = canonical_property_id(property_id)
     seed_csv_datasets()
     amenity_ids: set[str] = set()
     for path in sorted(DATASET_DIR.glob("*.csv")):
@@ -625,6 +657,7 @@ def get_slots_from_datasets(
     check_out: str | None = None,
 ) -> list[dict]:
     """Return bookable slots from the normalized CSV datasets."""
+    property_id = canonical_property_id(property_id)
     seed_csv_datasets()
     start = date.fromisoformat(check_in) if check_in else None
     end = date.fromisoformat(check_out) if check_out else None

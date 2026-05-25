@@ -38,6 +38,7 @@ def _source_dataset() -> Path:
 SOURCE_DATASET = _source_dataset()
 _MODEL = None
 _MODEL_READY = False
+_SOURCE_ROWS_CACHE: list[dict] | None = None
 
 
 def _amenity_code(amenity: str) -> int:
@@ -143,8 +144,12 @@ def _features(slot: dict) -> list[float]:
 
 
 def _source_rows() -> list[dict]:
+    global _SOURCE_ROWS_CACHE
+    if _SOURCE_ROWS_CACHE is not None:
+        return _SOURCE_ROWS_CACHE
     if not SOURCE_DATASET.exists():
-        return []
+        _SOURCE_ROWS_CACHE = []
+        return _SOURCE_ROWS_CACHE
     if SOURCE_DATASET.suffix.lower() in {".xlsx", ".xslx"}:
         from openpyxl import load_workbook
 
@@ -152,9 +157,11 @@ def _source_rows() -> list[dict]:
         sheet = workbook.active
         iterator = sheet.iter_rows(values_only=True)
         headers = [str(value) if value is not None else "" for value in next(iterator)]
-        return [dict(zip(headers, row)) for row in iterator]
+        _SOURCE_ROWS_CACHE = [dict(zip(headers, row)) for row in iterator]
+        return _SOURCE_ROWS_CACHE
     with SOURCE_DATASET.open(newline="") as handle:
-        return list(csv.DictReader(handle))
+        _SOURCE_ROWS_CACHE = list(csv.DictReader(handle))
+        return _SOURCE_ROWS_CACHE
 
 
 def _external_training_rows() -> list[tuple[list[float], float]]:
