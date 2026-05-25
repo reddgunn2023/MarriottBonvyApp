@@ -26,6 +26,7 @@ from services.booking_service import (
     cancel,
     waitlist,
 )
+from services.csv_dataset_service import recent_events, seed_csv_datasets
 from services.guest_service import check_in_guest, get_guest, save_guest_consent
 from services.analytics_service import get_busy_analytics, get_recommendations
 
@@ -71,6 +72,15 @@ def list_amenity_types(property_id: str | None = Query(default=None)):
     if property_id:
         return {"amenities": [amenity["name"] for amenity in get_property_amenities(property_id)]}
     return {"amenities": AMENITIES}
+
+
+
+
+@app.get("/amenities/datasets")
+def dataset_status():
+    """Return CSV dataset paths and recent event logs for verification."""
+    seeded = seed_csv_datasets()
+    return {**seeded, "recent_events": recent_events()}
 
 
 @app.get("/guests/{guest_id}", response_model=GuestResponse)

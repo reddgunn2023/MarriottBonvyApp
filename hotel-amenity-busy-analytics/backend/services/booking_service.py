@@ -1,6 +1,7 @@
 """Reserve, cancel, waitlist, and guest schedule logic for amenity slots."""
 
 from data.mock_slots import get_mock_slots
+from services.csv_dataset_service import update_dataset_for_event
 from services.score_service import recalculate_slot_scores
 
 _active_slots: dict[str, list[dict]] = {}
@@ -74,8 +75,18 @@ def _find_conflict(guest_id: str, slot: dict) -> dict | None:
     return None
 
 
-def _slot_result(slot: dict, success: bool, message: str, event_type: str, **extra) -> dict:
+def _slot_result(
+    slot: dict,
+    success: bool,
+    message: str,
+    event_type: str,
+    guest_id: str | None = None,
+    log_event: bool = False,
+    **extra,
+) -> dict:
     recalculate_slot_scores(slot)
+    if log_event and guest_id:
+        update_dataset_for_event(slot, event_type, guest_id, message)
     return {
         "success": success,
         "message": message,
@@ -121,7 +132,14 @@ def reserve(property_id: str, slot_id: str, guest_id: str = "guest-default") -> 
 
     _guest_schedules.setdefault(guest_id, []).append(_schedule_item(slot))
 
-    return _slot_result(slot, True, "Reservation confirmed", "RESERVE")
+    return _slot_result(
+        slot,
+        True,
+        "Reservation confirmed",
+        "RESERVE",
+        guest_id=guest_id,
+        log_event=True,
+    )
 
 
 def cancel(property_id: str, slot_id: str, guest_id: str = "guest-default") -> dict:
@@ -153,7 +171,14 @@ def cancel(property_id: str, slot_id: str, guest_id: str = "guest-default") -> d
         if slot["available"] <= 0:
             slot["status"] = "FULL"
 
-    return _slot_result(slot, True, "Reservation cancelled", "CANCEL")
+    return _slot_result(
+        slot,
+        True,
+        "Reservation cancelled",
+        "CANCEL",
+        guest_id=guest_id,
+        log_event=True,
+    )
 
 
 def waitlist(property_id: str, slot_id: str, guest_id: str = "guest-default") -> dict:
@@ -182,6 +207,8 @@ def waitlist(property_id: str, slot_id: str, guest_id: str = "guest-default") ->
         f"Added to waiting list at position {position}",
         "WAITLIST",
         waitlist_position=position,
+        guest_id=guest_id,
+        log_event=True,
     )
 
 

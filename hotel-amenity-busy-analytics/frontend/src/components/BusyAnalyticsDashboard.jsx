@@ -71,6 +71,7 @@ export default function BusyAnalyticsDashboard() {
   const [loading, setLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const [guestSchedule, setGuestSchedule] = useState([]);
+  const [view, setView] = useState("landing");
 
   useEffect(() => {
     async function loadInitialData() {
@@ -239,8 +240,137 @@ export default function BusyAnalyticsDashboard() {
   const isReservedByGuest = (slot) =>
     guestSchedule.some((item) => item.slot_id === slot.slotId);
 
+  const tripPropertyName = selectedProperty?.name || "JW Marriott Miami Turnberry Resort & Spa";
+
+  if (view === "landing") {
+    return (
+      <div className="bonvoy-page">
+        <header className="bonvoy-topbar">
+          <div className="bonvoy-logo">
+            <span>Marriott</span>
+            <strong>Bonvoy</strong>
+          </div>
+          <nav className="bonvoy-main-nav" aria-label="Marriott Bonvoy navigation">
+            <span>Book</span>
+            <span>Offers</span>
+            <span>Brands</span>
+            <span>Credit Cards</span>
+            <span>Marriott Bonvoy</span>
+            <span>Meetings &amp; Events</span>
+          </nav>
+          <div className="bonvoy-user-nav">
+            <span>Help</span>
+            <span>English</span>
+            <span>Trips</span>
+            <strong>Srikar reddy</strong>
+          </div>
+        </header>
+
+        <nav className="bonvoy-tabs" aria-label="Account sections">
+          {["Overview", "Activity", "Trips", "Favorites", "Promotions", "Profile"].map((tab) => (
+            <button key={tab} className={tab === "Trips" ? "active" : ""}>
+              {tab}
+            </button>
+          ))}
+        </nav>
+
+        <main className="bonvoy-content">
+          <section className="member-card">
+            <div className="member-greeting">Hi, Srikar reddy</div>
+            <div className="member-stats">
+              <div>
+                <span>Member Since May 2023</span>
+                <strong>Member</strong>
+                <small>View Benefits &gt;</small>
+              </div>
+              <div>
+                <span>7 Nights To Silver Elite</span>
+                <strong>3 Nights</strong>
+                <small>Nights Detail &gt;</small>
+              </div>
+              <div>
+                <span>Expires May 2028</span>
+                <strong>6,531 Points</strong>
+                <small>Buy Points &gt;</small>
+              </div>
+            </div>
+          </section>
+
+          <section className="offer-card">
+            <div className="offer-art">BONVOY<br />VISA</div>
+            <div>
+              <h2>Earn 4 Free Nights Valued up to 200,000 Points Total</h2>
+              <p>And up to $100 in airline credits.</p>
+            </div>
+            <button>Learn More</button>
+          </section>
+
+          <section className="trip-tabs-row">
+            <div className="trip-tab-buttons">
+              <button className="active">Upcoming Trips</button>
+              <button>Cancelled Trips</button>
+            </div>
+            <button className="reservation-search">Can&apos;t find a reservation? Search here</button>
+          </section>
+
+          <section className="upcoming-trip-card" onClick={() => setView("trip")} role="button" tabIndex={0}>
+            <div className="trip-date-block">
+              <span>May</span>
+              <strong>25</strong>
+            </div>
+            <div>
+              <span className="eyebrow">Upcoming Trip</span>
+              <h2>{tripPropertyName}</h2>
+              <p>Aventura, Florida · {checkIn} - {checkOut}</p>
+            </div>
+            <button>View Trip</button>
+          </section>
+        </main>
+      </div>
+    );
+  }
+
+  if (view === "trip") {
+    return (
+      <div className="bonvoy-page">
+        <header className="bonvoy-topbar">
+          <div className="bonvoy-logo">
+            <span>Marriott</span>
+            <strong>Bonvoy</strong>
+          </div>
+          <button className="plain-link" onClick={() => setView("landing")}>Back to Trips</button>
+        </header>
+        <main className="trip-detail-page">
+          <section className="trip-hero-card">
+            <span className="eyebrow">Upcoming Trip</span>
+            <h1>{tripPropertyName}</h1>
+            <p>{selectedProperty?.location || "Aventura, Florida"} · {checkIn} through {checkOut}</p>
+          </section>
+          <section className="trip-option-grid">
+            <article className="trip-option-card">
+              <h2>Booking</h2>
+              <p>View reservation details, check in, and unlock Plan Your Stay.</p>
+              <button className="black-btn" onClick={() => setView("booking")}>Open Booking</button>
+            </article>
+            <article className="trip-option-card">
+              <h2>Amenities &amp; Services</h2>
+              <p>Preview golf, spa, restaurants, lounges, EV charging, and resort services.</p>
+              <button onClick={() => setView("booking")}>Plan Amenities</button>
+            </article>
+            <article className="trip-option-card">
+              <h2>Hotel Details</h2>
+              <p>Explore property highlights and available services for this stay.</p>
+              <button onClick={() => setView("booking")}>View Details</button>
+            </article>
+          </section>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="turnberry-shell">
+      <button className="planner-back-link" onClick={() => setView("trip")}>Back to trip options</button>
       <nav className="brand-bar" aria-label="Property navigation">
         <div className="brand-lockup">
           <span className="brand-mark">JW</span>
@@ -319,7 +449,7 @@ export default function BusyAnalyticsDashboard() {
                 onChange={(e) => setGuestName(e.target.value)}
               />
             </div>
-            <button className="btn btn-primary" onClick={handleCheckIn}>
+            <button className="btn black-checkin-btn" onClick={handleCheckIn}>
               {checkedIn ? "Checked In" : "Check In"}
             </button>
           </article>
