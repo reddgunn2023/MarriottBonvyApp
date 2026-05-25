@@ -1780,6 +1780,7 @@ input {
 }
 
 .enterprise-chart-frame {
+  overflow-x: auto;
   padding: 18px;
   border: 1px solid #e3ddd5;
   border-radius: 14px;

@@ -6,7 +6,6 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer,
   Cell,
 } from "recharts";
 import {
@@ -37,6 +36,16 @@ function busyColor(score) {
   if (score <= 0.4) return "#2e7d32";
   if (score <= 0.7) return "#b77716";
   return "#a23b2a";
+}
+
+function scoreLevel(score) {
+  if (score >= 0.7) return "High";
+  if (score >= 0.4) return "Moderate";
+  return "Low";
+}
+
+function formatTimeSlot(slot) {
+  return slot.replace(/\b0(\d):/g, "$1:").replace(/:/g, ".");
 }
 
 function routeContext() {
@@ -94,7 +103,7 @@ export default function BusyAnalyticsDashboard() {
   const selectedAmenityList = selectedAmenities.length ? selectedAmenities : amenityTypes;
   const analyticsEntries = Object.entries(analyticsByAmenity);
   const chartDataFor = (slots) => slots.map((slot) => ({
-    label: slot.time_slot,
+    label: formatTimeSlot(slot.time_slot),
     date: slot.date,
     statusScore: slot.busy_score,
     slot,
@@ -324,40 +333,42 @@ export default function BusyAnalyticsDashboard() {
 
             {analyticsEntries.length > 0 && analyticsEntries.map(([amenityName, rows]) => (
               <section className="enterprise-card analytics-workspace" key={amenityName}>
-                <div className="analytics-heading"><div><span className="eyebrow">Stay Range Metrics</span><h2>{amenityName}</h2><p>Busy, demand, and forecast metrics are shown in 30-minute intervals from check-in to checkout.</p></div></div>
+                <div className="analytics-heading"><div><span className="eyebrow">Stay Range Metrics</span><h2>{amenityName}</h2><p>Busy and demand metrics are shown in 30-minute intervals from check-in to checkout.</p></div></div>
                 <div className="enterprise-chart-frame">
-                  <ResponsiveContainer width="100%" height={360}>
-                    <BarChart
-                      data={chartDataFor(rows)}
-                      onClick={(event) => {
-                        const slot = event?.activePayload?.[0]?.payload?.slot;
-                        if (slot) {
-                          setSelectedSlotsByAmenity((current) => ({ ...current, [amenityName]: slot }));
-                        }
+                  <BarChart
+                    width={Math.max(1400, chartDataFor(rows).length * 42)}
+                    height={380}
+                    data={chartDataFor(rows)}
+                    margin={{ top: 18, right: 24, left: 8, bottom: 96 }}
+                    onClick={(event) => {
+                      const slot = event?.activePayload?.[0]?.payload?.slot;
+                      if (slot) {
+                        setSelectedSlotsByAmenity((current) => ({ ...current, [amenityName]: slot }));
+                      }
+                    }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis
+                      dataKey="label"
+                      interval={0}
+                      minTickGap={0}
+                      angle={-55}
+                      textAnchor="end"
+                      height={96}
+                      tick={{ fontSize: 10 }}
+                    />
+                    <YAxis domain={[0, 1]} />
+                    <Tooltip
+                      formatter={(value, name) => [typeof value === "number" ? value.toFixed(2) : value, name]}
+                      labelFormatter={(_label, payload) => {
+                        const slot = payload?.[0]?.payload?.slot;
+                        return slot ? `${slot.date} · ${formatTimeSlot(slot.time_slot)}` : _label;
                       }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis
-                        dataKey="label"
-                        interval="preserveStartEnd"
-                        minTickGap={18}
-                        angle={-35}
-                        textAnchor="end"
-                        height={72}
-                      />
-                      <YAxis domain={[0, 1]} />
-                      <Tooltip
-                        formatter={(value, name) => [typeof value === "number" ? value.toFixed(2) : value, name]}
-                        labelFormatter={(_label, payload) => {
-                          const slot = payload?.[0]?.payload?.slot;
-                          return slot ? `${slot.date} · ${slot.time_slot}` : _label;
-                        }}
-                      />
-                      <Bar dataKey="statusScore" name="Slot Status" cursor="pointer" isAnimationActive={false} onClick={(data) => data?.slot && setSelectedSlotsByAmenity((current) => ({ ...current, [amenityName]: data.slot }))}>
-                        {chartDataFor(rows).map((entry, index) => <Cell key={`${entry.date}-${entry.label}-${index}`} fill={busyColor(entry.statusScore)} />)}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
+                    />
+                    <Bar dataKey="statusScore" name="Slot Status" cursor="pointer" isAnimationActive={false} onClick={(data) => data?.slot && setSelectedSlotsByAmenity((current) => ({ ...current, [amenityName]: data.slot }))}>
+                      {chartDataFor(rows).map((entry, index) => <Cell key={`${entry.date}-${entry.label}-${index}`} fill={busyColor(entry.statusScore)} />)}
+                    </Bar>
+                  </BarChart>
                 </div>
                 {selectedSlotsByAmenity[amenityName] ? (
                   <div className="slot-detail-card">
@@ -367,9 +378,8 @@ export default function BusyAnalyticsDashboard() {
                       <p>{selectedSlotsByAmenity[amenityName].date} · {amenityName}</p>
                     </div>
                     <dl>
-                      <div><dt>Busy</dt><dd>{selectedSlotsByAmenity[amenityName].busy_score.toFixed(2)}</dd></div>
-                      <div><dt>Demand</dt><dd>{selectedSlotsByAmenity[amenityName].demand_score.toFixed(2)}</dd></div>
-                      <div><dt>Forecast</dt><dd>{selectedSlotsByAmenity[amenityName].future_busy.toFixed(2)}</dd></div>
+                      <div><dt>Busy</dt><dd>{scoreLevel(selectedSlotsByAmenity[amenityName].busy_score)}</dd></div>
+                      <div><dt>Demand</dt><dd>{scoreLevel(selectedSlotsByAmenity[amenityName].demand_score)}</dd></div>
                       <div><dt>Weather</dt><dd>{selectedSlotsByAmenity[amenityName].weather_condition || "Clear"}</dd></div>
                       <div><dt>Traffic</dt><dd>{selectedSlotsByAmenity[amenityName].traffic_condition || "Light"}</dd></div>
                       <div><dt>Availability</dt><dd>{selectedSlotsByAmenity[amenityName].available <= 0 ? "Full" : `${selectedSlotsByAmenity[amenityName].available} open`}</dd></div>

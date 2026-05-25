@@ -412,6 +412,41 @@ def update_dataset_for_event(slot: dict, event_type: str, guest_id: str, message
         )
 
 
+def _parse_time_minutes(value: str) -> int | None:
+    try:
+        hour, minute = value.strip().replace('.', ':').split(':')
+        return int(hour) * 60 + int(minute)
+    except (ValueError, AttributeError):
+        return None
+
+
+def _format_minutes(value: int) -> str:
+    value = value % (24 * 60)
+    return f"{value // 60:02d}:{value % 60:02d}"
+
+
+def _expand_row_to_30_minute_rows(row: dict) -> list[dict]:
+    slot = row.get("time_slot", TIME_SLOTS[0])
+    if '-' not in slot:
+        return [row]
+    start_text, end_text = slot.split('-', 1)
+    start = _parse_time_minutes(start_text)
+    end = _parse_time_minutes(end_text)
+    if start is None or end is None:
+        return [row]
+    if end <= start:
+        end += 24 * 60
+    if end - start <= 30:
+        normalized = {**row, "time_slot": f"{_format_minutes(start)}-{_format_minutes(start + 30)}"}
+        return [normalized]
+    rows = []
+    current = start
+    while current < end:
+        rows.append({**row, "time_slot": f"{_format_minutes(current)}-{_format_minutes(current + 30)}"})
+        current += 30
+    return rows
+
+
 def _dataset_row_to_slot(row: dict, slot_index: int) -> dict:
     capacity = max(_safe_int(row.get("capacity", 1)), 1)
     booked = min(_safe_int(row.get("booked", 0)), capacity)
@@ -472,16 +507,19 @@ def get_slots_from_datasets(
     for path in sorted(DATASET_DIR.glob("*.csv")):
         if path.name == EVENT_LOG.name:
             continue
-        for idx, row in enumerate(_read_rows(path)):
-            row_property = row.get("property_id", property_id)
-            if row_property != property_id:
-                continue
-            row_date = row.get("date", "")
-            if start and row_date and date.fromisoformat(row_date) < start:
-                continue
-            if end and row_date and date.fromisoformat(row_date) >= end:
-                continue
-            slots.append(_dataset_row_to_slot(row, idx))
+        slot_index = 0
+        for row in _read_rows(path):
+            for expanded_row in _expand_row_to_30_minute_rows(row):
+                row_property = expanded_row.get("property_id", property_id)
+                if row_property != property_id:
+                    continue
+                row_date = expanded_row.get("date", "")
+                if start and row_date and date.fromisoformat(row_date) < start:
+                    continue
+                if end and row_date and date.fromisoformat(row_date) >= end:
+                    continue
+                slots.append(_dataset_row_to_slot(expanded_row, slot_index))
+                slot_index += 1
     return slots
 
 
