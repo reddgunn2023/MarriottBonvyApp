@@ -51,7 +51,11 @@ AMENITY_COLLECTIONS = [
         "collection": "freeBreakFast",
         "category": "Dining",
         "service_type": "reservation",
-        "description": "Breakfast service windows for eligible guests and packages.",
+        "description": "Free hot breakfast: Monday-Friday 6:30 AM-9:30 AM; Saturday-Sunday 7:00 AM-10:00 AM.",
+        "hours": {
+            "monday_friday": "6:30 AM-9:30 AM",
+            "saturday_sunday": "7:00 AM-10:00 AM",
+        },
         "capacity": 40,
     },
     {
