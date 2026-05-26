@@ -49,7 +49,7 @@ function scoreLevel(score) {
 
 function forecastSummary(slot) {
   if (slot.weather_blocked || slot.status === "WEATHER_BLOCKED") {
-    return "This outdoor activity might be affected during the selected time because severe weather is forecast. Consider another time or an indoor amenity.";
+    return "This outdoor activity might be cancelled during the selected time because severe weather is forecast. Consider another time or an indoor amenity.";
   }
   const level = scoreLevel(slot.future_busy);
   if (level === "High") {
@@ -212,14 +212,16 @@ export default function BusyAnalyticsDashboard() {
   const handleEvent = async (slotId, eventType) => {
     try {
       const result = await postEvent(propertyId, slotId, eventType, guestId);
-      setActionStates((current) => ({
-        ...current,
-        [slotId]: eventType === "RESERVE"
-          ? "RESERVED"
-          : eventType === "CANCEL"
-            ? "CANCELLED"
-            : "WAITLISTED",
-      }));
+      if (result.success) {
+        setActionStates((current) => ({
+          ...current,
+          [slotId]: eventType === "RESERVE"
+            ? "RESERVED"
+            : eventType === "CANCEL"
+              ? "CANCELLED"
+              : "WAITLISTED",
+        }));
+      }
       setEventMessage(result.message);
       await loadSchedule();
       await loadAnalytics(false);
@@ -231,7 +233,7 @@ export default function BusyAnalyticsDashboard() {
 
   const slotAction = (slot) => {
     if (slot.weather_blocked || slot.status === "WEATHER_BLOCKED") {
-      return <span className="weather-blocked-badge">Might be affected - severe weather</span>;
+      return <span className="weather-blocked-badge">Might be cancelled - severe weather</span>;
     }
     if (slot.service_type === "open_window") {
       return <span className="open-window-badge">Open window - no reservation needed</span>;
@@ -425,6 +427,12 @@ export default function BusyAnalyticsDashboard() {
                     </Bar>
                   </BarChart>
                 </div>
+                <div className="chart-color-legend" aria-label="Histogram color legend">
+                  <span><i className="legend-dot legend-green" />Green - availability / low busy</span>
+                  <span><i className="legend-dot legend-yellow" />Yellow - moderate</span>
+                  <span><i className="legend-dot legend-red" />Red - busy</span>
+                  <span><i className="legend-dot legend-grey" />Grey - not available / weather impacted</span>
+                </div>
                 {selectedSlotsByAmenity[amenityName] ? (
                   <div className="slot-detail-card">
                     <div>
@@ -445,12 +453,15 @@ export default function BusyAnalyticsDashboard() {
                       <div><dt>Availability</dt><dd>{selectedSlotsByAmenity[amenityName].weather_blocked ? "Weather Blocked" : selectedSlotsByAmenity[amenityName].service_type === "open_window" ? "Open Window" : selectedSlotsByAmenity[amenityName].available <= 0 ? "Full" : `${selectedSlotsByAmenity[amenityName].available} open`}</dd></div>
                     </dl>
                     <div className="slot-detail-actions">{slotAction(selectedSlotsByAmenity[amenityName])}</div>
+                    {eventMessage && !eventMessage.startsWith("Preparing") && (
+                      <p className="slot-event-message">{eventMessage}</p>
+                    )}
                     <div className="forecast-detail-note">
                       <strong>Forecast details</strong>
                       <p>{forecastSummary(selectedSlotsByAmenity[amenityName])}</p>
                       <small>Signals: busy {selectedSlotsByAmenity[amenityName].busy_score.toFixed(2)}, demand {selectedSlotsByAmenity[amenityName].demand_score.toFixed(2)}, weather {selectedSlotsByAmenity[amenityName].weather_condition || "clear"}, traffic {selectedSlotsByAmenity[amenityName].traffic_condition || "light"}{selectedSlotsByAmenity[amenityName].indoor_weather_boost ? ", indoor demand boosted by weather" : ""}.</small>
                       {selectedSlotsByAmenity[amenityName].weather_blocked && (
-                        <small className="weather-impact-note">Outdoor activity might be affected due to severe weather forecast for this time period.</small>
+                        <small className="weather-impact-note">Outdoor activity might be cancelled due to severe weather forecast for this time period.</small>
                       )}
                       {selectedSlotsByAmenity[amenityName].weather_blocked && selectedSlotsByAmenity[amenityName].seasonal_event_impact && (
                         <small className="seasonal-impact-note">{selectedSlotsByAmenity[amenityName].seasonal_event_impact}</small>

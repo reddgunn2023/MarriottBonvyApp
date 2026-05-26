@@ -2175,3 +2175,48 @@ input {
   color: #8b6f47 !important;
   font-weight: 800;
 }
+
+
+.chart-color-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+  align-items: center;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid #e3ddd5;
+  border-radius: 12px;
+  background: #fffdf9;
+  color: #554b43;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.chart-color-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.legend-green { background: #2e7d32; }
+.legend-yellow { background: #b77716; }
+.legend-red { background: #a23b2a; }
+.legend-grey { background: #9ca3af; }
+
+.slot-event-message {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid #d8d1c8;
+  border-radius: 12px;
+  background: #fff7ed;
+  color: #7c2d12;
+  font-weight: 800;
+}

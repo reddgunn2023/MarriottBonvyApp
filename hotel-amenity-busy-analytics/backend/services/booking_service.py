@@ -125,9 +125,9 @@ def reserve(property_id: str, slot_id: str, guest_id: str = "guest-default") -> 
     conflict = _find_conflict(guest_id, slot)
     if conflict:
         if conflict["slot_id"] == slot_id:
-            message = "This guest already reserved the selected slot"
+            message = f"User has already reserved {conflict['amenity']} during this time window."
         else:
-            message = f"Schedule conflict with {conflict['amenity']} at {conflict['time_slot']}"
+            message = f"User has already reserved {conflict['amenity']} during this time window."
         return _slot_result(
             slot,
             False,
