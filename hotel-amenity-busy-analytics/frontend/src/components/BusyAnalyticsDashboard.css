@@ -2362,3 +2362,140 @@ input {
     border-bottom: 1px dashed #b9b9b9;
   }
 }
+
+
+/* Marriott.com inspired Residence Inn hotel page shell */
+.marriott-hotel-page {
+  background: #fff;
+}
+
+.marriott-hotel-page .enterprise-main {
+  max-width: none;
+  padding: 0 0 72px;
+}
+
+.marriott-hotel-page .hotel-booking-header {
+  margin: 0;
+  border-top: 6px solid #1f1f1f;
+  border-bottom: 1px solid #d9d9d9;
+  box-shadow: none;
+}
+
+.hotel-site-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 76px;
+  padding: 0 32px;
+  border-bottom: 1px solid #eeeeee;
+  background: #fff;
+}
+
+.hotel-site-nav nav {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  color: #5d5d5d;
+  font-size: 0.82rem;
+}
+
+.hotel-site-nav nav span {
+  position: relative;
+  display: inline-flex;
+  min-height: 76px;
+  align-items: center;
+}
+
+.hotel-site-nav nav span.active {
+  color: #1f1f1f;
+  font-weight: 800;
+}
+
+.hotel-site-nav nav span.active::after {
+  position: absolute;
+  right: 0;
+  bottom: 16px;
+  left: 0;
+  height: 3px;
+  background: #1f6f9f;
+  content: "";
+}
+
+.marriott-hotel-page .hotel-title-row {
+  align-items: center;
+  padding: 20px 32px 18px;
+}
+
+.marriott-hotel-page .hotel-title-row h1 {
+  margin: 0;
+  letter-spacing: 0.08em;
+  font-size: clamp(1.15rem, 2vw, 1.55rem);
+  text-transform: uppercase;
+}
+
+.marriott-hotel-page .hotel-rating-row {
+  align-items: center;
+  white-space: nowrap;
+}
+
+.marriott-hotel-page .booking-summary-row {
+  grid-template-columns: minmax(280px, 1.1fr) minmax(260px, 1fr) minmax(260px, 1fr) 180px;
+  min-height: 96px;
+  border-top: 1px solid #e8e8e8;
+}
+
+.marriott-hotel-page .booking-summary-item {
+  border-right: 1px dashed #9c9c9c;
+  box-shadow: none;
+}
+
+.marriott-hotel-page .view-rates-button {
+  background: #5b2538;
+}
+
+.marriott-hotel-page .enterprise-checkin-panel,
+.marriott-hotel-page .enterprise-enable-panel,
+.marriott-hotel-page .enterprise-toolbar,
+.marriott-hotel-page .analytics-workspace,
+.marriott-hotel-page .smart-recommendations-panel {
+  max-width: 1180px;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.marriott-hotel-page .enterprise-checkin-panel,
+.marriott-hotel-page .enterprise-enable-panel,
+.marriott-hotel-page .enterprise-toolbar {
+  margin-top: 28px;
+}
+
+@media (max-width: 900px) {
+  .hotel-site-nav {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 16px;
+    padding: 18px 24px;
+  }
+
+  .hotel-site-nav nav {
+    flex-wrap: wrap;
+    gap: 18px;
+  }
+
+  .hotel-site-nav nav span {
+    min-height: 32px;
+  }
+
+  .hotel-site-nav nav span.active::after {
+    bottom: 0;
+  }
+
+  .marriott-hotel-page .hotel-title-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .marriott-hotel-page .booking-summary-row {
+    grid-template-columns: 1fr;
+  }
+}

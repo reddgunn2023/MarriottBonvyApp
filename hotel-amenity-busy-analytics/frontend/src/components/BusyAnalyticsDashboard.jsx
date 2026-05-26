@@ -289,12 +289,7 @@ export default function BusyAnalyticsDashboard() {
   }
 
   return (
-    <div className="enterprise-page">
-      <header className="enterprise-topbar">
-        <button className="plain-link" onClick={() => setView("landing")}>Back to Trips</button>
-        <div className="enterprise-brand"><span>Marriott Bonvoy</span><strong>Amenity Intelligence</strong></div>
-      </header>
-
+    <div className="enterprise-page marriott-hotel-page">
       {showConsentModal && (
         <div className="consent-modal-backdrop" role="dialog" aria-modal="true">
           <article className="consent-modal-card enterprise-consent-card">
@@ -308,11 +303,19 @@ export default function BusyAnalyticsDashboard() {
 
       <main className="enterprise-main">
         <section className="hotel-booking-header">
+          <div className="hotel-site-nav">
+            <div className="hotel-brand-wordmark">Residence Inn <small>by Marriott</small></div>
+            <nav aria-label="Hotel page navigation">
+              <span className="active">Overview</span>
+              <span>Gallery</span>
+              <span>Accommodations</span>
+              <span>Dining</span>
+              <span>Experiences</span>
+              <span>Events</span>
+            </nav>
+          </div>
           <div className="hotel-title-row">
-            <div>
-              <span className="hotel-brand-wordmark">Residence Inn <small>by Marriott</small></span>
-              <h1>{tripPropertyName}</h1>
-            </div>
+            <h1>{tripPropertyName}</h1>
             <div className="hotel-rating-row" aria-label="Hotel rating and links">
               <span className="rating-dots">●●●●○</span>
               <span>4.2</span>
