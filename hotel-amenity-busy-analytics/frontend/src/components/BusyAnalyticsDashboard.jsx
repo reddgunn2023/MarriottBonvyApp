@@ -48,6 +48,9 @@ function scoreLevel(score) {
 }
 
 function forecastSummary(slot) {
+  if (slot.weather_blocked || slot.status === "WEATHER_BLOCKED") {
+    return "This outdoor activity is cancelled for the selected time because severe weather is expected. Please choose another time or consider an indoor amenity.";
+  }
   const level = scoreLevel(slot.future_busy);
   if (level === "High") {
     return "High forecast: expect heavier usage. Consider alternate times or join the waiting line if full.";
@@ -435,6 +438,9 @@ export default function BusyAnalyticsDashboard() {
                       <div><dt>Demand</dt><dd>{scoreLevel(selectedSlotsByAmenity[amenityName].demand_score)}</dd></div>
                       <div><dt>Forecast</dt><dd>{scoreLevel(selectedSlotsByAmenity[amenityName].future_busy)}</dd></div>
                       <div><dt>Season</dt><dd>{selectedSlotsByAmenity[amenityName].season || "spring"}</dd></div>
+                      {selectedSlotsByAmenity[amenityName].seasonal_event && (
+                        <div><dt>Seasonal Event</dt><dd>{selectedSlotsByAmenity[amenityName].seasonal_event}</dd></div>
+                      )}
                       <div><dt>Weather</dt><dd>{selectedSlotsByAmenity[amenityName].weather_condition || "Clear"}</dd></div>
                       <div><dt>Traffic</dt><dd>{selectedSlotsByAmenity[amenityName].traffic_condition || "Light"}</dd></div>
                       <div><dt>Availability</dt><dd>{selectedSlotsByAmenity[amenityName].weather_blocked ? "Weather Blocked" : selectedSlotsByAmenity[amenityName].service_type === "open_window" ? "Open Window" : selectedSlotsByAmenity[amenityName].available <= 0 ? "Full" : `${selectedSlotsByAmenity[amenityName].available} open`}</dd></div>
@@ -444,6 +450,12 @@ export default function BusyAnalyticsDashboard() {
                       <strong>Forecast details</strong>
                       <p>{forecastSummary(selectedSlotsByAmenity[amenityName])}</p>
                       <small>Signals: busy {selectedSlotsByAmenity[amenityName].busy_score.toFixed(2)}, demand {selectedSlotsByAmenity[amenityName].demand_score.toFixed(2)}, weather {selectedSlotsByAmenity[amenityName].weather_condition || "clear"}, traffic {selectedSlotsByAmenity[amenityName].traffic_condition || "light"}{selectedSlotsByAmenity[amenityName].indoor_weather_boost ? ", indoor demand boosted by weather" : ""}.</small>
+                      {selectedSlotsByAmenity[amenityName].weather_blocked && (
+                        <small className="weather-impact-note">Outdoor activity cancelled due to severe weather for this time period.</small>
+                      )}
+                      {selectedSlotsByAmenity[amenityName].seasonal_event_impact && (
+                        <small className="seasonal-impact-note">{selectedSlotsByAmenity[amenityName].seasonal_event_impact}</small>
+                      )}
                     </div>
                   </div>
                 ) : (

@@ -77,6 +77,8 @@ class SlotScore(BaseModel):
     waitlist_count: int
     service_type: str = "reservation"
     season: str = "spring"
+    seasonal_event: str | None = None
+    seasonal_event_impact: str | None = None
     weather_condition: str = "clear"
     weather_severity: float = 0.0
     weather_blocked: bool = False

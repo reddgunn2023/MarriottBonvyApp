@@ -2164,3 +2164,14 @@ input {
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
+
+
+.weather-impact-note {
+  color: #7f1d1d !important;
+  font-weight: 800;
+}
+
+.seasonal-impact-note {
+  color: #8b6f47 !important;
+  font-weight: 800;
+}

@@ -446,6 +446,21 @@ def _historical_variance(current_date: date, time_index: int, amenity_id: str) -
     return (seed - 4) * 0.025
 
 
+def seasonal_event_for(day: date) -> dict | None:
+    """Deterministic seasonal event metadata for mock scenarios."""
+    if day.month == 7 and day.day == 4:
+        return {
+            "name": "Independence Day holiday",
+            "impact": "Holiday demand is elevated; outdoor plans may be affected by afternoon storms.",
+        }
+    if day.month == 7 and day.day in {1, 2, 3, 5, 6, 7}:
+        return {
+            "name": "Summer travel week",
+            "impact": "Summer family travel increases demand for pool and indoor amenities.",
+        }
+    return None
+
+
 def _generate_slots_for_range(
     property_id: str,
     start_date: date,
@@ -472,6 +487,7 @@ def _generate_slots_for_range(
 
                 weather_condition = weather_condition_for(current_date, idx, amenity["name"])
                 traffic_condition = traffic_condition_for(current_date, idx)
+                seasonal_event = seasonal_event_for(current_date)
                 weather_blocked = weather_condition == "severe" and amenity["id"] in OUTDOOR_AMENITY_IDS
                 indoor_weather_boost = weather_condition == "severe" and amenity["id"] not in OUTDOOR_AMENITY_IDS
                 if indoor_weather_boost:
@@ -500,6 +516,8 @@ def _generate_slots_for_range(
                         "waitlistGuests": [],
                         "reservedGuests": [],
                         "season": season_for(current_date),
+                        "seasonalEvent": seasonal_event["name"] if seasonal_event else None,
+                        "seasonalEventImpact": seasonal_event["impact"] if seasonal_event else None,
                         "weatherCondition": weather_condition,
                         "weatherSeverity": 1.0 if weather_condition == "severe" else (0.65 if weather_condition in {"heat", "rain"} else 0.1),
                         "weatherBlocked": weather_blocked,
