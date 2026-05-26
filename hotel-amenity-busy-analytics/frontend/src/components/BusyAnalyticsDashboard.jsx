@@ -290,7 +290,6 @@ export default function BusyAnalyticsDashboard() {
             <button className="reservation-search">Can&apos;t find a reservation? Search here</button>
           </section>
           <section className="upcoming-trip-card" onClick={() => setView("booking")} role="button" tabIndex={0}>
-            <div className="trip-date-block"><span>May</span><strong>25</strong></div>
             <div><span className="eyebrow">Upcoming Trip</span><h2>{tripPropertyName}</h2><p>Anaheim, California · {checkIn} - {checkOut}</p></div>
             <button onClick={(event) => { event.stopPropagation(); setView("booking"); }}>View Trip</button>
           </section>
