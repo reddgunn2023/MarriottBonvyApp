@@ -162,7 +162,6 @@ export default function BusyAnalyticsDashboard() {
           ...current,
           [item]: recData.recommendations || [],
         }));
-        setEventMessage(`Loaded ${item} analytics.`);
       }
       await loadSchedule();
     } catch (err) {
@@ -458,10 +457,8 @@ export default function BusyAnalyticsDashboard() {
                       )}
                     </div>
                   </div>
-                ) : (
-                  <div className="slot-detail-empty">Click a bar to view that 30-minute slot and choose Reserve, Cancel, or Join Waiting Line.</div>
-                )}
-                {eventMessage && <p className="event-msg enterprise-event-msg">{eventMessage}</p>}
+                ) : null}
+                {eventMessage === "Failed to load analytics" && <p className="event-msg enterprise-event-msg">{eventMessage}</p>}
               </section>
             ))}
 
