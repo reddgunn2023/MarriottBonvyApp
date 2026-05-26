@@ -2499,3 +2499,77 @@ input {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Onsite amenities overview and single amenity analytics */
+.onsite-amenities-overview {
+  max-width: 1180px;
+  margin: 28px auto 22px;
+  padding: 28px;
+}
+
+.onsite-overview-heading h2 {
+  margin: 8px 0;
+  color: #2c241d;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 2rem;
+  font-weight: 500;
+}
+
+.onsite-overview-heading p {
+  color: #665c52;
+  line-height: 1.55;
+}
+
+.onsite-amenity-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px 18px;
+  margin-top: 22px;
+}
+
+.onsite-amenity-list span {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  padding: 0 14px;
+  border-left: 3px solid #1f6f9f;
+  background: #fffdf9;
+  color: #2c241d;
+  font-weight: 800;
+}
+
+.single-amenity-toolbar {
+  grid-template-columns: minmax(280px, 0.9fr) minmax(220px, 0.7fr) auto;
+  align-items: end;
+}
+
+.amenity-selector-control {
+  display: grid;
+  gap: 8px;
+}
+
+.amenity-selector-control span {
+  color: #8b6f47;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.amenity-selector-control select,
+.amenity-selector-control input {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid #d8d1c8;
+  border-radius: 10px;
+  background: #fff;
+  color: #24201c;
+  font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .single-amenity-toolbar {
+    grid-template-columns: 1fr;
+  }
+}

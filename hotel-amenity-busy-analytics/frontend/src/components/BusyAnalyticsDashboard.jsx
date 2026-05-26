@@ -82,6 +82,7 @@ export default function BusyAnalyticsDashboard() {
   const [selectedAmenities, setSelectedAmenities] = useState([]);
   const [checkIn, setCheckIn] = useState(todayStr());
   const [checkOut, setCheckOut] = useState(addDays(todayStr(), 3));
+  const [selectedAnalyticsDate, setSelectedAnalyticsDate] = useState(todayStr());
   const [guestName, setGuestName] = useState("Taylor Bonvoy");
   const [checkedIn, setCheckedIn] = useState(false);
   const [planEnabled, setPlanEnabled] = useState(false);
@@ -100,7 +101,10 @@ export default function BusyAnalyticsDashboard() {
       setProperties(loadedProperties);
       const guestProfile = await fetchGuestProfile(guestId);
       if (guestProfile.guest_name) setGuestName(guestProfile.guest_name);
-      if (guestProfile.check_in) setCheckIn(guestProfile.check_in);
+      if (guestProfile.check_in) {
+        setCheckIn(guestProfile.check_in);
+        setSelectedAnalyticsDate(guestProfile.check_in);
+      }
       if (guestProfile.check_out) setCheckOut(guestProfile.check_out);
       setCheckedIn(Boolean(guestProfile.checked_in));
       setPlanEnabled(Boolean(guestProfile.plan_your_stay_enabled));
@@ -123,14 +127,59 @@ export default function BusyAnalyticsDashboard() {
   const tripPropertyName = selectedProperty?.name || DEFAULT_HOTEL_NAME;
 
 
-  const selectedAmenityList = selectedAmenities.length ? selectedAmenities : amenityTypes;
+  const selectedAmenityList = useMemo(() => (amenity ? [amenity] : []), [amenity]);
   const analyticsEntries = Object.entries(analyticsByAmenity);
-  const chartDataFor = (slots) => slots.map((slot) => ({
-    label: formatTimeSlot(slot.time_slot),
-    date: slot.date,
-    statusScore: Math.max(slot.busy_score, 0.04),
-    slot,
-  }));
+  const chartDataFor = (slots) => {
+    const buckets = new Map();
+    slots
+      .filter((slot) => slot.date === selectedAnalyticsDate)
+      .forEach((slot) => {
+        const [start] = slot.time_slot.split("-");
+        const hour = start.split(":")[0];
+        const bucketStart = `${hour}:00`;
+        const bucketEnd = `${String((Number(hour) + 1) % 24).padStart(2, "0")}:00`;
+        const key = `${bucketStart}-${bucketEnd}`;
+        const existing = buckets.get(key) || {
+          label: formatTimeSlot(key),
+          date: slot.date,
+          slots: [],
+          busyScore: 0,
+          demandScore: 0,
+          futureBusy: 0,
+          statusScore: 0,
+        };
+        existing.slots.push(slot);
+        existing.busyScore += slot.busy_score;
+        existing.demandScore += slot.demand_score;
+        existing.futureBusy += slot.future_busy;
+        if (slot.weather_blocked || slot.status === "WEATHER_BLOCKED") {
+          existing.weather_blocked = true;
+        }
+        buckets.set(key, existing);
+      });
+
+    return Array.from(buckets.values()).map((bucket) => {
+      const count = bucket.slots.length || 1;
+      const representativeSlot = bucket.slots.find((slot) => slot.weather_blocked || slot.status === "WEATHER_BLOCKED") || bucket.slots[0];
+      const avgBusy = bucket.busyScore / count;
+      return {
+        ...bucket,
+        busyScore: avgBusy,
+        demandScore: bucket.demandScore / count,
+        futureBusy: bucket.futureBusy / count,
+        statusScore: Math.max(avgBusy, 0.04),
+        slot: {
+          ...representativeSlot,
+          time_slot: bucket.label.replace(/\./g, ":"),
+          busy_score: avgBusy,
+          demand_score: bucket.demandScore / count,
+          future_busy: bucket.futureBusy / count,
+          weather_blocked: Boolean(bucket.weather_blocked),
+          status: bucket.weather_blocked ? "WEATHER_BLOCKED" : representativeSlot.status,
+        },
+      };
+    });
+  };
 
   const loadSchedule = useCallback(async () => {
     setGuestSchedule((await fetchGuestSchedule(guestId)) || []);
@@ -148,10 +197,7 @@ export default function BusyAnalyticsDashboard() {
     try {
       for (const item of amenitiesToLoad) {
         const analyticsData = await fetchBusyAnalytics(propertyId, item, checkIn, checkOut);
-        setAnalyticsByAmenity((current) => ({
-          ...current,
-          [item]: analyticsData.slots || [],
-        }));
+        setAnalyticsByAmenity({ [item]: analyticsData.slots || [] });
       }
       await loadSchedule();
     } catch (err) {
@@ -187,16 +233,6 @@ export default function BusyAnalyticsDashboard() {
     setSelectedAmenities(guest.selected_amenities);
     if (guest.plan_your_stay_enabled) setShowConsentModal(false);
     setEventMessage(enabled ? "Smart Amenity Insights enabled." : "Smart Amenity Insights disabled.");
-  };
-
-  const toggleAmenityFilter = (amenityName) => {
-    setSelectedAmenities((current) => {
-      const next = current.includes(amenityName)
-        ? current.filter((item) => item !== amenityName)
-        : [...current, amenityName];
-      if (!next.includes(amenity)) setAmenity(next[0] || "");
-      return next;
-    });
   };
 
   const handleEvent = async (slotId, eventType) => {
@@ -359,22 +395,32 @@ export default function BusyAnalyticsDashboard() {
           </section>
         ) : (
           <>
-            <section className="enterprise-toolbar enterprise-card multi-amenity-toolbar">
-              <div className="multi-select-panel">
-                <span>Amenities & Services</span>
-                <div className="multi-select-chip-grid">
-                  {amenityTypes.map((item) => (
-                    <label className={`multi-select-chip ${selectedAmenities.includes(item) ? "selected" : ""}`} key={item}>
-                      <input
-                        type="checkbox"
-                        checked={selectedAmenities.includes(item)}
-                        onChange={() => toggleAmenityFilter(item)}
-                      />
-                      {item}
-                    </label>
-                  ))}
-                </div>
+            <section className="onsite-amenities-overview enterprise-card">
+              <div className="onsite-overview-heading">
+                <span className="eyebrow">Featured Amenities On-Site</span>
+                <h2>Residence Inn amenities and services</h2>
+                <p>Use the analytics add-on below to review hourly busy patterns for a selected onsite amenity or service.</p>
               </div>
+              <div className="onsite-amenity-list">
+                {amenityTypes.map((item) => (
+                  <span key={item}>{item}</span>
+                ))}
+              </div>
+            </section>
+
+            <section className="enterprise-toolbar enterprise-card single-amenity-toolbar">
+              <label className="control-group amenity-selector-control">
+                <span>Amenity or Service</span>
+                <select value={amenity} onChange={(event) => setAmenity(event.target.value)}>
+                  {amenityTypes.map((item) => (
+                    <option key={item} value={item}>{item}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="control-group amenity-selector-control">
+                <span>Analytics Date</span>
+                <input type="date" value={selectedAnalyticsDate} min={checkIn} max={checkOut} onChange={(event) => setSelectedAnalyticsDate(event.target.value)} />
+              </label>
               <button className="black-btn" onClick={() => loadAnalytics()} disabled={!selectedAmenityList.length || loading}>{loading ? "Loading" : "View Analytics"}</button>
             </section>
 
@@ -394,7 +440,7 @@ export default function BusyAnalyticsDashboard() {
 
             {analyticsEntries.length > 0 && analyticsEntries.map(([amenityName, rows]) => (
               <section className="enterprise-card analytics-workspace" key={amenityName}>
-                <div className="analytics-heading"><div><span className="eyebrow">Stay Range Metrics</span><h2>{amenityName}</h2><p>Busy and demand metrics are shown in 30-minute intervals from check-in to checkout.</p></div></div>
+                <div className="analytics-heading"><div><span className="eyebrow">Stay Range Metrics</span><h2>{amenityName}</h2><p>Hourly busy and demand metrics for the selected date are shown below as an onsite amenities analytics add-on.</p></div></div>
                 <div className="enterprise-chart-frame">
                   <BarChart
                     width={Math.max(1400, chartDataFor(rows).length * 42)}
@@ -440,7 +486,7 @@ export default function BusyAnalyticsDashboard() {
                 {selectedSlotsByAmenity[amenityName] ? (
                   <div className="slot-detail-card">
                     <div>
-                      <span className="eyebrow">Selected 30-minute slot</span>
+                      <span className="eyebrow">Selected hourly window</span>
                       <h3>{selectedSlotsByAmenity[amenityName].time_slot}</h3>
                       <p>{selectedSlotsByAmenity[amenityName].date} · {amenityName}</p>
                     </div>
