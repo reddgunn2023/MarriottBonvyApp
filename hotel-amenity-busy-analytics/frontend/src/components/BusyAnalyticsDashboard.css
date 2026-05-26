@@ -2220,3 +2220,145 @@ input {
   color: #7c2d12;
   font-weight: 800;
 }
+
+
+/* Residence Inn booking-style header */
+.hotel-booking-header {
+  margin-bottom: 26px;
+  border-top: 4px solid #1f1f1f;
+  border-bottom: 1px solid #d8d8d8;
+  background: #fff;
+}
+
+.hotel-title-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 24px 28px 18px;
+}
+
+.hotel-brand-wordmark {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  color: #5d2434;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.hotel-brand-wordmark small {
+  color: #777;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 0.55rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.hotel-title-row h1 {
+  margin: 22px 0 0;
+  color: #232323;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: clamp(1.2rem, 2vw, 1.6rem);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hotel-rating-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px 12px;
+  color: #333;
+  font-size: 0.8rem;
+}
+
+.hotel-rating-row a {
+  color: #1f1f1f;
+  text-decoration: underline;
+}
+
+.rating-dots {
+  color: #316c8b;
+  letter-spacing: 2px;
+}
+
+.booking-summary-row {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(220px, 1fr) minmax(220px, 1fr) auto;
+  border-top: 1px solid #ececec;
+}
+
+.booking-summary-item {
+  display: grid;
+  min-height: 86px;
+  align-content: center;
+  gap: 8px;
+  padding: 0 28px;
+  border-right: 1px dashed #b9b9b9;
+}
+
+.booking-summary-item span {
+  color: #8b8179;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.booking-summary-item strong {
+  color: #232323;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.date-summary-item {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.date-summary-item span {
+  margin-right: 2px;
+}
+
+.date-summary-item em {
+  color: #5b5b5b;
+  font-style: normal;
+}
+
+.view-rates-button {
+  align-self: center;
+  justify-self: center;
+  min-height: 44px;
+  padding: 0 28px;
+  border: 0;
+  border-radius: 999px;
+  background: #5d2434;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.multi-amenity-toolbar {
+  grid-template-columns: minmax(360px, 1fr) auto;
+}
+
+@media (max-width: 900px) {
+  .hotel-title-row,
+  .booking-summary-row {
+    grid-template-columns: 1fr;
+    display: grid;
+  }
+
+  .hotel-rating-row {
+    justify-content: flex-start;
+  }
+
+  .booking-summary-item {
+    border-right: 0;
+    border-bottom: 1px dashed #b9b9b9;
+  }
+}

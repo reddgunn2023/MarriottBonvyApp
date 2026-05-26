@@ -15,7 +15,6 @@ import {
   fetchGuestProfile,
   fetchGuestSchedule,
   fetchProperties,
-  fetchRecommendations,
   postEvent,
   saveGuestConsent,
 } from "../services/amenityApi";
@@ -87,7 +86,6 @@ export default function BusyAnalyticsDashboard() {
   const [checkedIn, setCheckedIn] = useState(false);
   const [planEnabled, setPlanEnabled] = useState(false);
   const [analyticsByAmenity, setAnalyticsByAmenity] = useState({});
-  const [recommendationsByAmenity, setRecommendationsByAmenity] = useState({});
   const [actionStates, setActionStates] = useState({});
   const [selectedSlotsByAmenity, setSelectedSlotsByAmenity] = useState({});
   const [eventMessage, setEventMessage] = useState("");
@@ -145,22 +143,14 @@ export default function BusyAnalyticsDashboard() {
     if (clearMessage) {
       setEventMessage("Preparing analytics...");
       setAnalyticsByAmenity({});
-      setRecommendationsByAmenity({});
       setSelectedSlotsByAmenity({});
     }
     try {
       for (const item of amenitiesToLoad) {
-        const [analyticsData, recData] = await Promise.all([
-          fetchBusyAnalytics(propertyId, item, checkIn, checkOut),
-          fetchRecommendations(propertyId, item, checkIn, checkOut),
-        ]);
+        const analyticsData = await fetchBusyAnalytics(propertyId, item, checkIn, checkOut);
         setAnalyticsByAmenity((current) => ({
           ...current,
           [item]: analyticsData.slots || [],
-        }));
-        setRecommendationsByAmenity((current) => ({
-          ...current,
-          [item]: recData.recommendations || [],
         }));
       }
       await loadSchedule();
@@ -317,16 +307,36 @@ export default function BusyAnalyticsDashboard() {
       )}
 
       <main className="enterprise-main">
-        <section className="enterprise-property-header">
-          <div>
-            <span className="eyebrow">Anaheim, California</span>
-            <h1>{tripPropertyName}</h1>
-            <p>Enterprise amenity operations dashboard for guest stay planning and service recommendations.</p>
+        <section className="hotel-booking-header">
+          <div className="hotel-title-row">
+            <div>
+              <span className="hotel-brand-wordmark">Residence Inn <small>by Marriott</small></span>
+              <h1>{tripPropertyName}</h1>
+            </div>
+            <div className="hotel-rating-row" aria-label="Hotel rating and links">
+              <span className="rating-dots">●●●●○</span>
+              <span>4.2</span>
+              <a href="#reviews">3090 Reviews</a>
+              <span>📍 View Map</span>
+              <span>☎ +1 714-782-7500</span>
+            </div>
           </div>
-          <div className="enterprise-stay-panel">
-            <span>Stay Window</span>
-            <strong>{checkIn} - {checkOut}</strong>
-            <small>{checkedIn ? "Checked in" : "Check-in required"}</small>
+          <div className="booking-summary-row">
+            <div className="booking-summary-item date-summary-item">
+              <span>Dates (1 Night)</span>
+              <strong>{checkIn}</strong>
+              <em>→</em>
+              <strong>{checkOut}</strong>
+            </div>
+            <div className="booking-summary-item">
+              <span>Rooms & Guests</span>
+              <strong>1 Room, 1 Adult</strong>
+            </div>
+            <div className="booking-summary-item">
+              <span>Special Rates</span>
+              <strong>Lowest Regular Rate</strong>
+            </div>
+            <button className="view-rates-button" type="button">View Rates</button>
           </div>
         </section>
 
@@ -347,14 +357,6 @@ export default function BusyAnalyticsDashboard() {
         ) : (
           <>
             <section className="enterprise-toolbar enterprise-card multi-amenity-toolbar">
-              <label className="stay-range-inline date-input-card">
-                <span>Checkin Date:</span>
-                <input type="date" value={checkIn} onChange={(event) => setCheckIn(event.target.value)} />
-              </label>
-              <label className="stay-range-inline date-input-card">
-                <span>Checkout Date:</span>
-                <input type="date" value={checkOut} onChange={(event) => setCheckOut(event.target.value)} />
-              </label>
               <div className="multi-select-panel">
                 <span>Amenities & Services</span>
                 <div className="multi-select-chip-grid">
@@ -471,32 +473,6 @@ export default function BusyAnalyticsDashboard() {
                 {eventMessage === "Failed to load analytics" && <p className="event-msg enterprise-event-msg">{eventMessage}</p>}
               </section>
             ))}
-
-            {Object.values(recommendationsByAmenity).some((items) => items.length > 0) && (
-              <section className="enterprise-card smart-recommendations-panel">
-                <div className="section-heading"><span className="eyebrow">Smart Recommendations</span><h2>Recommended Planning Windows</h2></div>
-                <div className="enterprise-rec-groups">
-                  {Object.entries(recommendationsByAmenity)
-                    .filter(([, recs]) => recs.length > 0)
-                    .map(([amenityName, recs]) => (
-                      <section className="enterprise-rec-group" key={amenityName}>
-                        <div className="enterprise-rec-group-heading">
-                          <h3>{amenityName}</h3>
-                          <span>{recs.length} recommended windows</span>
-                        </div>
-                        <div className="enterprise-rec-list">
-                          {recs.map((rec) => (
-                            <article key={`${amenityName}-${rec.slot_id}`}>
-                              <strong>{rec.date} · {rec.time_slot}</strong>
-                              <p>{rec.reason}</p>
-                            </article>
-                          ))}
-                        </div>
-                      </section>
-                    ))}
-                </div>
-              </section>
-            )}
           </>
         )}
       </main>
