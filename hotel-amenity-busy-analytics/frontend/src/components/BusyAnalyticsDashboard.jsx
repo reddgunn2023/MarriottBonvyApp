@@ -613,6 +613,68 @@ export default function BusyAnalyticsDashboard() {
             ))}
           </>
         )}
+
+
+        <section className="marriott-content-band accommodations-band" id="accommodations">
+          <div className="content-band-copy">
+            <span className="eyebrow">Accommodations</span>
+            <h2>Rest well in our all-suites hotel in Anaheim, CA</h2>
+            <p>Make yourself at home in modern studio, one-bedroom and two-bedroom suites with separate living and sleeping areas, plush Marriott bedding, ergonomic workspaces, free Wi‑Fi and fully equipped kitchens.</p>
+            <ul>
+              <li>Full kitchens with refrigerator, stovetop, microwave and dishwasher</li>
+              <li>Studio and family suite layouts for longer stays</li>
+              <li>Workspaces and free Wi‑Fi for productivity</li>
+            </ul>
+          </div>
+          <div className="content-band-media"><span>Suites with full kitchens</span></div>
+        </section>
+
+        <section className="marriott-content-band dining-band" id="dining">
+          <div className="content-band-media"><span>Complimentary Breakfast in Anaheim</span></div>
+          <div className="content-band-copy">
+            <span className="eyebrow">Dining</span>
+            <h2>Enjoy food and drinks offered at Residence Inn</h2>
+            <p>Start with a satisfying complimentary hot breakfast, then unwind later at the Residence Inn Lobby Bar or explore nearby Anaheim dining options.</p>
+            <ul>
+              <li>Free Hot Breakfast: Monday-Friday 6:30 AM-9:30 AM</li>
+              <li>Saturday-Sunday 7:00 AM-10:00 AM</li>
+              <li>Residence Inn Lobby Bar for evening drinks</li>
+            </ul>
+          </div>
+        </section>
+
+        <section className="marriott-experience-section" id="experiences">
+          <span className="eyebrow">Explore Anaheim</span>
+          <h2>From theme parks to convention center stays, Anaheim has something for everyone</h2>
+          <div className="experience-card-grid">
+            <article><strong>Disneyland Resort</strong><p>Convenient access to Disneyland Resort, Disney California Adventure Park and Downtown Disney District.</p></article>
+            <article><strong>Anaheim Convention Center</strong><p>Stay close to business events, group stays and convention travel.</p></article>
+            <article><strong>Rooftop Pool</strong><p>Relax with pool, hot tub, splash zone and cabana-style amenities.</p></article>
+          </div>
+        </section>
+
+        <section className="marriott-content-band events-band" id="events">
+          <div className="content-band-copy">
+            <span className="eyebrow">Meetings & Events</span>
+            <h2>Stay together for groups and extended trips</h2>
+            <p>Ask about group stays and room blocks when booking multiple rooms near Anaheim Resort and the Convention Center.</p>
+          </div>
+          <div className="content-band-media"><span>Book a Room Block</span></div>
+        </section>
+
+        <section className="bonvoy-app-promo">
+          <div>
+            <span className="eyebrow">Marriott Bonvoy App</span>
+            <h2>Unlock your stay with the Marriott Bonvoy App</h2>
+            <p>Use digital check-in, mobile key, service requests and amenity insights to plan your stay.</p>
+          </div>
+          <button className="black-btn" type="button">Explore App Features</button>
+        </section>
+
+        <footer className="marriott-footer">
+          <strong>Residence Inn® by Marriott® at Anaheim Resort/Convention Center</strong>
+          <span>Overview · Photos · Suites · Dining · Experiences · Events · Best Rate Guarantee</span>
+        </footer>
       </main>
     </div>
   );

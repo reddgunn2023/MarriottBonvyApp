@@ -3033,3 +3033,145 @@ input {
     margin-left: 18px;
   }
 }
+
+
+/* Full Marriott overview content */
+.marriott-content-band,
+.marriott-experience-section,
+.bonvoy-app-promo,
+.marriott-footer {
+  max-width: 1180px;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.marriott-content-band {
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) minmax(300px, 0.9fr);
+  gap: 42px;
+  align-items: stretch;
+  padding: 54px 0;
+  border-top: 1px solid #e5e1da;
+}
+
+.marriott-content-band:nth-of-type(even) {
+  grid-template-columns: minmax(300px, 0.9fr) minmax(320px, 1fr);
+}
+
+.content-band-copy h2,
+.marriott-experience-section h2,
+.bonvoy-app-promo h2 {
+  margin: 10px 0 16px;
+  color: #2f2f2f;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.85rem, 3vw, 3rem);
+  line-height: 1.08;
+}
+
+.content-band-copy p,
+.marriott-experience-section p,
+.bonvoy-app-promo p {
+  color: #555;
+  line-height: 1.75;
+}
+
+.content-band-copy ul {
+  display: grid;
+  gap: 10px;
+  margin: 22px 0 0;
+  padding-left: 20px;
+  color: #444;
+  line-height: 1.55;
+}
+
+.content-band-media {
+  min-height: 300px;
+  display: grid;
+  align-content: end;
+  padding: 28px;
+  border-radius: 4px;
+  background:
+    linear-gradient(145deg, rgba(35, 31, 32, 0.06), rgba(35, 31, 32, 0.55)),
+    linear-gradient(135deg, #d8c8b5, #b6c3bc 46%, #4c463f);
+  color: #fff;
+}
+
+.content-band-media span {
+  max-width: 340px;
+  font-size: 1.4rem;
+  font-weight: 800;
+}
+
+.marriott-experience-section {
+  padding: 54px 0;
+  border-top: 1px solid #e5e1da;
+}
+
+.experience-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 26px;
+}
+
+.experience-card-grid article {
+  min-height: 170px;
+  padding: 24px;
+  border: 1px solid #e3ddd5;
+  background: #fff;
+}
+
+.experience-card-grid strong {
+  display: block;
+  margin-bottom: 10px;
+  color: #2c241d;
+  font-size: 1.1rem;
+}
+
+.bonvoy-app-promo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: 36px;
+  padding: 32px;
+  border-radius: 4px;
+  background: #f7f3ee;
+}
+
+.marriott-footer {
+  display: grid;
+  gap: 8px;
+  margin-top: 36px;
+  padding: 34px 0 54px;
+  border-top: 1px solid #d9d9d9;
+  color: #555;
+}
+
+.marriott-footer strong {
+  color: #2c241d;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+@media (max-width: 900px) {
+  .marriott-content-band,
+  .marriott-content-band:nth-of-type(even),
+  .experience-card-grid,
+  .bonvoy-app-promo {
+    grid-template-columns: 1fr;
+  }
+
+  .marriott-content-band,
+  .marriott-experience-section,
+  .bonvoy-app-promo,
+  .marriott-footer {
+    margin-right: 18px;
+    margin-left: 18px;
+  }
+
+  .bonvoy-app-promo {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
