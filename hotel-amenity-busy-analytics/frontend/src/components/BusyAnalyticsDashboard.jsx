@@ -88,6 +88,7 @@ function addDays(dateStr, days) {
 }
 
 function statusColor(entry) {
+  if (entry.isPlaceholder || entry.slot?.is_placeholder || entry.slot?.status === "UNAVAILABLE") return "#9ca3af";
   if (entry.slot?.weather_blocked || entry.slot?.status === "WEATHER_BLOCKED") return "#9ca3af";
   if (entry.statusScore <= 0.4) return "#2e7d32";
   if (entry.statusScore <= 0.7) return "#b77716";
@@ -101,6 +102,9 @@ function scoreLevel(score) {
 }
 
 function forecastSummary(slot) {
+  if (slot.is_placeholder || slot.status === "UNAVAILABLE") {
+    return "This hour is outside the available analytics window for the selected amenity.";
+  }
   if (slot.weather_blocked || slot.status === "WEATHER_BLOCKED") {
     return "This outdoor activity might be cancelled during the selected time because severe weather is forecast. Consider another time or an indoor amenity.";
   }
@@ -231,15 +235,34 @@ export default function BusyAnalyticsDashboard() {
   const analyticsEntries = Object.entries(analyticsByAmenity);
   const chartDataFor = useCallback((slots) => {
     const buckets = new Map();
+
+    for (let hour = 0; hour < 24; hour += 1) {
+      const bucketStart = `${String(hour).padStart(2, "0")}:00`;
+      const bucketEnd = `${String((hour + 1) % 24).padStart(2, "0")}:00`;
+      const key = `${bucketStart}-${bucketEnd}`;
+      buckets.set(key, {
+        key,
+        label: formatStartHour(key),
+        date: selectedAnalyticsDate,
+        slots: [],
+        busyScore: 0,
+        demandScore: 0,
+        futureBusy: 0,
+        statusScore: 0.04,
+        isPlaceholder: true,
+      });
+    }
+
     slots
       .filter((slot) => slot.date === selectedAnalyticsDate)
       .forEach((slot) => {
         const [start] = slot.time_slot.split("-");
-        const hour = start.split(":")[0];
-        const bucketStart = `${hour}:00`;
-        const bucketEnd = `${String((Number(hour) + 1) % 24).padStart(2, "0")}:00`;
+        const hour = Number(start.split(":")[0]);
+        const bucketStart = `${String(hour).padStart(2, "0")}:00`;
+        const bucketEnd = `${String((hour + 1) % 24).padStart(2, "0")}:00`;
         const key = `${bucketStart}-${bucketEnd}`;
         const existing = buckets.get(key) || {
+          key,
           label: formatStartHour(key),
           date: slot.date,
           slots: [],
@@ -247,7 +270,9 @@ export default function BusyAnalyticsDashboard() {
           demandScore: 0,
           futureBusy: 0,
           statusScore: 0,
+          isPlaceholder: true,
         };
+        existing.isPlaceholder = false;
         existing.slots.push(slot);
         existing.busyScore += slot.busy_score;
         existing.demandScore += slot.demand_score;
@@ -259,6 +284,28 @@ export default function BusyAnalyticsDashboard() {
       });
 
     return Array.from(buckets.values()).map((bucket) => {
+      if (bucket.isPlaceholder) {
+        return {
+          ...bucket,
+          slot: {
+            slot_id: `unavailable-${selectedAnalyticsDate}-${bucket.key}`,
+            date: selectedAnalyticsDate,
+            time_slot: bucket.key,
+            busy_score: 0,
+            demand_score: 0,
+            future_busy: 0,
+            capacity: 0,
+            booked: 0,
+            available: 0,
+            waitlist_count: 0,
+            service_type: "unavailable",
+            weather_blocked: false,
+            status: "UNAVAILABLE",
+            is_placeholder: true,
+          },
+        };
+      }
+
       const count = bucket.slots.length || 1;
       const representativeSlot = bucket.slots.find((slot) => slot.weather_blocked || slot.status === "WEATHER_BLOCKED") || bucket.slots[0];
       const avgBusy = bucket.busyScore / count;
@@ -276,10 +323,15 @@ export default function BusyAnalyticsDashboard() {
           future_busy: bucket.futureBusy / count,
           weather_blocked: Boolean(bucket.weather_blocked),
           status: bucket.weather_blocked ? "WEATHER_BLOCKED" : representativeSlot.status,
+          is_placeholder: false,
         },
       };
     });
   }, [selectedAnalyticsDate]);
+
+  const firstSelectableChartSlot = useCallback((slots) => (
+    chartDataFor(slots).find((entry) => !entry.isPlaceholder && !entry.slot?.is_placeholder)?.slot
+  ), [chartDataFor]);
 
   const hydrateActionStates = (schedule) => {
     setActionStates((current) => {
@@ -322,7 +374,7 @@ export default function BusyAnalyticsDashboard() {
         const analyticsData = await fetchBusyAnalytics(propertyId, item, checkIn, checkOut);
         setAnalyticsByAmenity({ [item]: analyticsData.slots || [] });
         if (analyticsData.slots?.length) {
-          setSelectedSlotsByAmenity({ [item]: chartDataFor(analyticsData.slots)[0].slot });
+          setSelectedSlotsByAmenity({ [item]: firstSelectableChartSlot(analyticsData.slots) });
         }
       }
       await loadSchedule();
@@ -332,7 +384,7 @@ export default function BusyAnalyticsDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [propertyId, selectedAmenityList, checkIn, checkOut, loadSchedule, chartDataFor]);
+  }, [propertyId, selectedAmenityList, checkIn, checkOut, loadSchedule, firstSelectableChartSlot]);
 
   const loadAnalyticsForAmenity = async (item) => {
     if (!item) return;
@@ -345,7 +397,7 @@ export default function BusyAnalyticsDashboard() {
       const analyticsData = await fetchBusyAnalytics(propertyId, item, checkIn, checkOut);
       setAnalyticsByAmenity({ [item]: analyticsData.slots || [] });
       if (analyticsData.slots?.length) {
-        setSelectedSlotsByAmenity({ [item]: chartDataFor(analyticsData.slots)[0].slot });
+        setSelectedSlotsByAmenity({ [item]: firstSelectableChartSlot(analyticsData.slots) });
       }
       await loadSchedule();
     } catch (err) {
@@ -393,6 +445,9 @@ export default function BusyAnalyticsDashboard() {
   };
 
   const slotAction = (slot) => {
+    if (slot.is_placeholder || slot.status === "UNAVAILABLE") {
+      return <span className="weather-blocked-badge">Not available for this hour</span>;
+    }
     if (slot.weather_blocked || slot.status === "WEATHER_BLOCKED") {
       return <span className="weather-blocked-badge">Might be cancelled - severe weather</span>;
     }
@@ -622,7 +677,7 @@ export default function BusyAnalyticsDashboard() {
                         margin={{ top: 12, right: 12, left: 0, bottom: 52 }}
                         onClick={(event) => {
                           const slot = event?.activePayload?.[0]?.payload?.slot;
-                          if (slot) {
+                          if (slot && !slot.is_placeholder) {
                             setSelectedSlotsByAmenity((current) => ({ ...current, [amenityName]: slot }));
                           }
                         }}
@@ -642,15 +697,17 @@ export default function BusyAnalyticsDashboard() {
                           formatter={(value, name) => [typeof value === "number" ? scoreLevel(value) : value, name]}
                           labelFormatter={(_label, payload) => {
                             const slot = payload?.[0]?.payload?.slot;
-                            return slot ? `${slot.date} · ${formatTimeSlot(slot.time_slot)}` : _label;
+                            if (!slot) return _label;
+                            const displaySlot = slot.is_placeholder ? formatStartHour(slot.time_slot) : formatTimeSlot(slot.time_slot);
+                            return `${slot.date} · ${displaySlot}`;
                           }}
                         />
-                        <Bar dataKey="statusScore" name="Busy Status" cursor="pointer" barSize={36} maxBarSize={36} isAnimationActive={false} onClick={(data) => data?.slot && setSelectedSlotsByAmenity((current) => ({ ...current, [amenityName]: data.slot }))}>
+                        <Bar dataKey="statusScore" name="Busy Status" cursor="pointer" barSize={24} maxBarSize={24} isAnimationActive={false} onClick={(data) => data?.slot && !data.slot.is_placeholder && setSelectedSlotsByAmenity((current) => ({ ...current, [amenityName]: data.slot }))}>
                           {chartDataFor(rows).map((entry, index) => (
                             <Cell
                               key={`${entry.date}-${entry.label}-${index}`}
                               fill={statusColor(entry)}
-                              onClick={() => setSelectedSlotsByAmenity((current) => ({ ...current, [amenityName]: entry.slot }))}
+                              onClick={() => !entry.isPlaceholder && setSelectedSlotsByAmenity((current) => ({ ...current, [amenityName]: entry.slot }))}
                             />
                           ))}
                         </Bar>
