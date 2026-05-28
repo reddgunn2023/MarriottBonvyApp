@@ -474,33 +474,7 @@ export default function BusyAnalyticsDashboard() {
           </p>
         </section>
 
-        <section className="marriott-feature-grid" aria-label="Hotel highlights">
-          <article>
-            <span>☕</span>
-            <h3>Complimentary Breakfast</h3>
-            <p>Start your day with a free hot breakfast during your stay.</p>
-          </article>
-          <article>
-            <span>▤</span>
-            <h3>All-Suite Comfort</h3>
-            <p>Studio, one-bedroom and two-bedroom suites with full kitchens.</p>
-          </article>
-          <article>
-            <span>≈</span>
-            <h3>Rooftop Pool</h3>
-            <p>Outdoor pool, hot tub, splash zone and cabana-style relaxation.</p>
-          </article>
-          <article>
-            <span>🏋</span>
-            <h3>Fitness Center</h3>
-            <p>Stay on routine with cardio, weights, and wellness amenities.</p>
-          </article>
-        </section>
 
-        <section className="marriott-location-strip">
-          <strong>640 West Katella Avenue, Anaheim, California, USA</strong>
-          <span>Near Disneyland Resort · Anaheim Convention Center · Downtown Disney District</span>
-        </section>
 
         {!checkedIn ? (
           <section className="enterprise-checkin-panel">
