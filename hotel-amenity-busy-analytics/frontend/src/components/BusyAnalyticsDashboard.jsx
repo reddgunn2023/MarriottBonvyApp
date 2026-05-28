@@ -88,7 +88,7 @@ function addDays(dateStr, days) {
 }
 
 function statusColor(entry) {
-  if (entry.isPlaceholder || entry.slot?.is_placeholder || entry.slot?.status === "UNAVAILABLE") return "#9ca3af";
+  if (entry.isPlaceholder || entry.slot?.is_placeholder || entry.slot?.status === "UNAVAILABLE") return "transparent";
   if (entry.slot?.weather_blocked || entry.slot?.status === "WEATHER_BLOCKED") return "#9ca3af";
   if (entry.statusScore <= 0.4) return "#2e7d32";
   if (entry.statusScore <= 0.7) return "#b77716";
@@ -248,7 +248,7 @@ export default function BusyAnalyticsDashboard() {
         busyScore: 0,
         demandScore: 0,
         futureBusy: 0,
-        statusScore: 0.04,
+        statusScore: 0,
         isPlaceholder: true,
       });
     }
