@@ -22,6 +22,19 @@ import "./BusyAnalyticsDashboard.css";
 
 const DEFAULT_HOTEL_NAME = "Residence Inn at Anaheim Resort/Convention Center";
 const IMPORTANT_AMENITIES = ["Free Breakfast", "Pool", "Fitness Center", "Lounges"];
+const AMENITY_ICON_MAP = {
+  "Free Breakfast": "☕",
+  Pool: "≈",
+  "Fitness Center": "🏋",
+  Lounges: "🍸",
+  Golf: "⛳",
+  Spa: "✦",
+  Tennis: "🎾",
+  Cabanas: "⛱",
+  "EV Charging": "⚡",
+  Restaurants: "🍽",
+  "Whirlpool Onsite": "♨",
+};
 
 function todayStr() {
   return "2026-03-26";
@@ -208,6 +221,25 @@ export default function BusyAnalyticsDashboard() {
     }
   }, [propertyId, selectedAmenityList, checkIn, checkOut, loadSchedule]);
 
+  const loadAnalyticsForAmenity = async (item) => {
+    if (!item) return;
+    setAmenity(item);
+    setLoading(true);
+    setEventMessage("");
+    setAnalyticsByAmenity({});
+    setSelectedSlotsByAmenity({});
+    try {
+      const analyticsData = await fetchBusyAnalytics(propertyId, item, checkIn, checkOut);
+      setAnalyticsByAmenity({ [item]: analyticsData.slots || [] });
+      await loadSchedule();
+    } catch (err) {
+      console.error(err);
+      setEventMessage("Failed to load analytics");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleCheckIn = async () => {
     const guest = await checkInGuest({
       guest_id: guestId,
@@ -289,11 +321,7 @@ export default function BusyAnalyticsDashboard() {
 
   if (view === "landing") {
     return (
-      <div className="bonvoy-page enterprise-bonvoy-page bonvoy-mobile-app">
-        <header className="bonvoy-mobile-header">
-          <div className="bonvoy-mobile-logo"><span>Marriott</span><strong>Bonvoy</strong></div>
-          <div className="bonvoy-mobile-profile"><span>Hi, Srikar</span><strong>6,531 pts</strong></div>
-        </header>
+      <div className="bonvoy-page enterprise-bonvoy-page marriott-web-page">
         <header className="bonvoy-topbar">
           <div className="bonvoy-logo"><span>Marriott</span><strong>Bonvoy</strong></div>
           <nav className="bonvoy-main-nav" aria-label="Marriott Bonvoy navigation">
@@ -324,23 +352,12 @@ export default function BusyAnalyticsDashboard() {
             <button onClick={(event) => { event.stopPropagation(); setView("booking"); }}>View Trip</button>
           </section>
         </main>
-        <nav className="bonvoy-bottom-nav" aria-label="Bonvoy app navigation">
-          <span>⌂<strong>Home</strong></span>
-          <span>⌕<strong>Search</strong></span>
-          <span className="active">▣<strong>Trips</strong></span>
-          <span>★<strong>Account</strong></span>
-        </nav>
       </div>
     );
   }
 
   return (
-    <div className="enterprise-page marriott-hotel-page bonvoy-mobile-app">
-      <header className="bonvoy-mobile-header">
-        <button className="bonvoy-back-button" onClick={() => setView("landing")}>‹</button>
-        <div className="bonvoy-mobile-logo"><span>Marriott</span><strong>Bonvoy</strong></div>
-        <div className="bonvoy-mobile-profile"><span>Trip</span><strong>Active</strong></div>
-      </header>
+    <div className="enterprise-page marriott-hotel-page marriott-web-page">
       {showConsentModal && (
         <div className="consent-modal-backdrop" role="dialog" aria-modal="true">
           <article className="consent-modal-card enterprise-consent-card">
@@ -418,25 +435,30 @@ export default function BusyAnalyticsDashboard() {
               </div>
               <div className="onsite-amenity-list">
                 {amenityTypes.map((item) => (
-                  <span key={item}>{item}</span>
+                  <button
+                    className={`onsite-amenity-button ${amenity === item ? "active" : ""}`}
+                    key={item}
+                    type="button"
+                    onClick={() => loadAnalyticsForAmenity(item)}
+                  >
+                    <span className="onsite-amenity-icon">{AMENITY_ICON_MAP[item] || "•"}</span>
+                    <span>{item}</span>
+                  </button>
                 ))}
               </div>
             </section>
 
-            <section className="enterprise-toolbar enterprise-card single-amenity-toolbar">
-              <label className="control-group amenity-selector-control">
-                <span>Amenity or Service</span>
-                <select value={amenity} onChange={(event) => setAmenity(event.target.value)}>
-                  {amenityTypes.map((item) => (
-                    <option key={item} value={item}>{item}</option>
-                  ))}
-                </select>
-              </label>
+            <section className="enterprise-toolbar enterprise-card single-amenity-toolbar no-dropdown-toolbar">
+              <div className="selected-amenity-summary">
+                <span>Selected Amenity / Service</span>
+                <strong>{amenity}</strong>
+                <small>Choose an onsite amenity above to update analytics.</small>
+              </div>
               <label className="control-group amenity-selector-control">
                 <span>Analytics Date</span>
                 <input type="date" value={selectedAnalyticsDate} min={checkIn} max={checkOut} onChange={(event) => setSelectedAnalyticsDate(event.target.value)} />
               </label>
-              <button className="black-btn" onClick={() => loadAnalytics()} disabled={!selectedAmenityList.length || loading}>{loading ? "Loading" : "View Analytics"}</button>
+              <button className="black-btn" onClick={() => loadAnalyticsForAmenity(amenity)} disabled={!amenity || loading}>{loading ? "Loading" : "View Analytics"}</button>
             </section>
 
             {loading && (
@@ -540,12 +562,6 @@ export default function BusyAnalyticsDashboard() {
           </>
         )}
       </main>
-      <nav className="bonvoy-bottom-nav" aria-label="Bonvoy app navigation">
-        <span>⌂<strong>Home</strong></span>
-        <span>⌕<strong>Search</strong></span>
-        <span className="active">▣<strong>Trips</strong></span>
-        <span>★<strong>Account</strong></span>
-      </nav>
     </div>
   );
 }
