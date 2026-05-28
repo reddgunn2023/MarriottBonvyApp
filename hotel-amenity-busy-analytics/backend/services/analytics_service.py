@@ -29,8 +29,8 @@ def _recommendation_reason(slot: dict) -> str:
         return f"A calmer pool window around {time_slot}; better for lounge chairs and less crowded swim time."
     if amenity == "Fitness Center":
         return f"A good workout window around {time_slot}; equipment should be easier to access."
-    if amenity == "Lounges":
-        return f"A comfortable lounge window around {time_slot}; useful for a quieter drink or meeting spot."
+    if amenity == "On-Site Bar":
+        return f"A comfortable on-site bar window around {time_slot}; useful for a quieter drink or meeting spot."
     if amenity == "Cabanas":
         return f"A better cabana window around {time_slot}; availability looks more favorable for a relaxed poolside block."
     if amenity == "EV Charging":

@@ -78,11 +78,11 @@ AMENITY_COLLECTIONS = [
     },
     {
         "id": "lounges",
-        "name": "Lounges",
-        "collection": "lounges",
+        "name": "On-Site Bar",
+        "collection": "onsiteBar",
         "category": "Dining",
         "service_type": "reservation",
-        "description": "Lobby lounge and premium seating windows.",
+        "description": "On-site bar seating windows and evening drink service.",
         "capacity": 24,
     },
     {
@@ -271,7 +271,7 @@ GUESTS = {
         "check_out": "2026-07-08",
         "checked_in": False,
         "plan_your_stay_enabled": False,
-        "selected_amenities": ["Free Breakfast", "Pool", "Fitness Center", "Lounges"],
+        "selected_amenities": ["Free Breakfast", "Pool", "Fitness Center", "On-Site Bar"],
     },
 }
 
@@ -319,7 +319,7 @@ _PEAK_PATTERNS = {
     "Free Breakfast": _pattern_with_overrides({6: 0.42, 7: 0.82, 8: 0.96, 9: 0.48}, default=0.02),
     "Whirlpool Onsite": _expand_pattern([0.0, 0.0, 0.1, 0.2, 0.45, 0.65, 0.75, 0.8, 0.9, 0.6, 0.3, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
     "Restaurants": _expand_pattern([0.0, 0.0, 0.05, 0.1, 0.35, 0.65, 0.55, 0.85, 1.0, 0.9, 0.5, 0.2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
-    "Lounges": _expand_pattern([0.0, 0.0, 0.0, 0.05, 0.1, 0.25, 0.4, 0.65, 0.95, 1.0, 0.7, 0.2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
+    "On-Site Bar": _expand_pattern([0.0, 0.0, 0.0, 0.05, 0.1, 0.25, 0.4, 0.65, 0.95, 1.0, 0.7, 0.2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
     "Tennis": _expand_pattern([0.0, 0.0, 0.25, 0.45, 0.75, 0.85, 0.65, 0.5, 0.35, 0.15, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
     "Cabanas": _expand_pattern([0.0, 0.0, 0.1, 0.25, 0.55, 0.8, 1.0, 0.75, 0.45, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
     "Business Center": _pattern_with_overrides({7: 0.25, 8: 0.45, 9: 0.62, 10: 0.54, 11: 0.38, 12: 0.30, 13: 0.42, 14: 0.58, 15: 0.64, 16: 0.48, 17: 0.30, 18: 0.18, 19: 0.12, 20: 0.08, 21: 0.05}, default=0.02),

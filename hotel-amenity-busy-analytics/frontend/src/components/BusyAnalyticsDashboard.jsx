@@ -21,7 +21,7 @@ import {
 import "./BusyAnalyticsDashboard.css";
 
 const DEFAULT_HOTEL_NAME = "Residence Inn at Anaheim Resort/Convention Center";
-const IMPORTANT_AMENITIES = ["Free Breakfast", "Pool", "Fitness Center", "Lounges"];
+const IMPORTANT_AMENITIES = ["Free Breakfast", "Pool", "Fitness Center", "On-Site Bar"];
 const FEATURED_AMENITY_TABS = [
   { id: "property", label: "Property Amenities", count: 12 },
   { id: "room", label: "Room Amenities", count: 4 },
@@ -37,7 +37,7 @@ const PROPERTY_AMENITIES_ONSITE = [
   { icon: "≈", name: "Outdoor Pool", detail: "Complimentary", amenity: "Pool" },
   { icon: "♨", name: "Whirlpool", detail: "Complimentary", amenity: "Whirlpool Onsite" },
   { icon: "⛱", name: "Cabanas/Palapas", detail: "$250.00", amenity: "Cabanas" },
-  { icon: "🍸", name: "On-Site Bar", detail: "1 Bar", amenity: "Lounges" },
+  { icon: "🍸", name: "On-Site Bar", detail: "1 Bar", amenity: "On-Site Bar" },
   { icon: "▣", name: "Business Center" },
   { icon: "▤", name: "Meeting Space" },
   { icon: "🏋", name: "Fitness Center", detail: "Complimentary", amenity: "Fitness Center" },
