@@ -476,7 +476,7 @@ export default function BusyAnalyticsDashboard() {
 
 
 
-        {!checkedIn ? (
+        {!checkedIn && (
           <section className="enterprise-checkin-panel">
             <div className="control-group">
               <label htmlFor="guestName">Guest name</label>
@@ -484,15 +484,17 @@ export default function BusyAnalyticsDashboard() {
             </div>
             <button className="black-btn" onClick={handleCheckIn}>Check In</button>
           </section>
-        ) : !planEnabled ? (
+        )}
+
+        {checkedIn && !planEnabled && (
           <section className="enterprise-enable-panel">
             <h2>Smart Amenity Insights</h2>
             <p>Enable insights to unlock amenity metrics, waitlist actions, and recommendations.</p>
             <button className="black-btn" onClick={() => setShowConsentModal(true)}>Enable Feature</button>
           </section>
-        ) : (
-          <>
-            <section className="featured-onsite-section enterprise-card">
+        )}
+
+        <section className="featured-onsite-section enterprise-card">
               <div className="featured-onsite-heading">
                 <h2>Featured Amenities On-Site</h2>
               </div>
@@ -537,6 +539,8 @@ export default function BusyAnalyticsDashboard() {
               <p className="featured-onsite-help">Select an available onsite amenity or service to view its analytics below.</p>
             </section>
 
+        {checkedIn && planEnabled && (
+          <>
             {loading && (
               <section className="enterprise-card analytics-loading-state">
                 <strong>Loading analytics...</strong>
