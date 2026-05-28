@@ -649,12 +649,12 @@ export default function BusyAnalyticsDashboard() {
                       ))}
                     </Bar>
                   </BarChart>
-                </div>
-                <div className="chart-color-legend" aria-label="Histogram color legend">
-                  <span><i className="legend-dot legend-green" />Green - availability / low busy</span>
-                  <span><i className="legend-dot legend-yellow" />Yellow - moderate</span>
-                  <span><i className="legend-dot legend-red" />Red - busy</span>
-                  <span><i className="legend-dot legend-grey" />Grey - not available / weather impacted</span>
+                  <div className="chart-color-legend" aria-label="Histogram color legend">
+                    <span><i className="legend-dot legend-green" />Green - availability / low busy</span>
+                    <span><i className="legend-dot legend-yellow" />Yellow - moderate</span>
+                    <span><i className="legend-dot legend-red" />Red - busy</span>
+                    <span><i className="legend-dot legend-grey" />Grey - not available / weather impacted</span>
+                  </div>
                 </div>
                 {selectedSlotsByAmenity[amenityName] ? (
                   <div className="slot-detail-card">
