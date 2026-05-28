@@ -441,39 +441,11 @@ export default function BusyAnalyticsDashboard() {
             </div>
           </div>
           <div className="booking-summary-row">
-            <div className="booking-summary-item date-summary-item editable-date-summary">
+            <div className="booking-summary-item date-summary-item">
               <span>Dates (1 Night)</span>
-              <label>
-                <small>Check-in</small>
-                <input
-                  type="date"
-                  value={checkIn}
-                  onChange={(event) => {
-                    const nextCheckIn = event.target.value;
-                    setCheckIn(nextCheckIn);
-                    setSelectedAnalyticsDate(nextCheckIn);
-                    if (checkOut <= nextCheckIn) {
-                      setCheckOut(addDays(nextCheckIn, 1));
-                    }
-                    setAnalyticsByAmenity({});
-                    setSelectedSlotsByAmenity({});
-                  }}
-                />
-              </label>
+              <strong>{checkIn}</strong>
               <em>→</em>
-              <label>
-                <small>Checkout</small>
-                <input
-                  type="date"
-                  value={checkOut}
-                  min={addDays(checkIn, 1)}
-                  onChange={(event) => {
-                    setCheckOut(event.target.value);
-                    setAnalyticsByAmenity({});
-                    setSelectedSlotsByAmenity({});
-                  }}
-                />
-              </label>
+              <strong>{checkOut}</strong>
             </div>
             <div className="booking-summary-item">
               <span>Rooms & Guests</span>
@@ -556,6 +528,23 @@ export default function BusyAnalyticsDashboard() {
                 })}
               </div>
               <p className="featured-onsite-help">Select an available onsite amenity or service to view its analytics below.</p>
+              <div className="featured-analytics-controls">
+                <label className="amenity-selector-control analytics-date-control">
+                  <span>Analytics Date</span>
+                  <input
+                    type="date"
+                    value={selectedAnalyticsDate}
+                    min={checkIn}
+                    max={checkOut}
+                    onChange={(event) => {
+                      setSelectedAnalyticsDate(event.target.value);
+                      setAnalyticsByAmenity({});
+                      setSelectedSlotsByAmenity({});
+                    }}
+                  />
+                </label>
+                <span className="analytics-date-hint">Choose a date within your stay to update onsite amenity analytics.</span>
+              </div>
               <div className="featured-analytics-canvas">
             {loading && (
               <section className="enterprise-card analytics-loading-state">

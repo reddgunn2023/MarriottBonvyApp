@@ -3625,3 +3625,25 @@ input {
   font-weight: 700;
   outline: none;
 }
+
+.featured-analytics-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 16px;
+  margin-top: 22px;
+  padding: 16px;
+  border: 1px solid #e5dfd7;
+  border-radius: 12px;
+  background: #fffdf9;
+}
+
+.analytics-date-control {
+  min-width: 220px;
+}
+
+.analytics-date-hint {
+  color: #665c52;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
