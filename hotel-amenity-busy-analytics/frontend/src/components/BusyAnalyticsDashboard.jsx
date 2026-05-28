@@ -9,12 +9,14 @@ import {
   Cell,
 } from "recharts";
 import {
+  checkInGuest,
   fetchAmenityTypes,
   fetchBusyAnalytics,
   fetchGuestProfile,
   fetchGuestSchedule,
   fetchProperties,
   postEvent,
+  saveGuestConsent,
 } from "../services/amenityApi";
 import "./BusyAnalyticsDashboard.css";
 
@@ -120,7 +122,14 @@ export default function BusyAnalyticsDashboard() {
   const [selectedAnalyticsDate, setSelectedAnalyticsDate] = useState(todayStr());
   const [analyticsByAmenity, setAnalyticsByAmenity] = useState({});
   const [actionStates, setActionStates] = useState({});
+  const [actionMessages, setActionMessages] = useState({});
   const [selectedSlotsByAmenity, setSelectedSlotsByAmenity] = useState({});
+  const [showLandingConsent, setShowLandingConsent] = useState(false);
+  const [consentOptions, setConsentOptions] = useState({
+    liveAvailability: false,
+    personalizedRecommendations: false,
+    availabilityAlerts: false,
+  });
   const [eventMessage, setEventMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [, setGuestSchedule] = useState([]);
@@ -142,7 +151,9 @@ export default function BusyAnalyticsDashboard() {
         .filter((item) => loadedAmenityTypes.includes(item));
       setAmenityTypes(loadedAmenityTypes);
       setAmenity(defaultSelected[0] || loadedAmenityTypes[0] || "");
-      setGuestSchedule((await fetchGuestSchedule(guestId)) || []);
+      const schedule = (await fetchGuestSchedule(guestId)) || [];
+      setGuestSchedule(schedule);
+      hydrateActionStates(schedule);
     }
     loadInitialData().catch(console.error);
   }, [propertyId, guestId]);
@@ -222,8 +233,31 @@ export default function BusyAnalyticsDashboard() {
     });
   };
 
+  const hydrateActionStates = (schedule) => {
+    setActionStates((current) => {
+      const next = { ...current };
+      schedule.forEach((item) => {
+        if (item.status === "WAITLISTED") next[item.slot_id] = "WAITLISTED";
+        if (item.status === "RESERVED") next[item.slot_id] = "RESERVED";
+      });
+      return next;
+    });
+    setActionMessages((current) => {
+      const next = { ...current };
+      schedule.forEach((item) => {
+        if (item.status === "WAITLISTED") {
+          next[item.slot_id] = `Joined Waiting Line${item.position ? ` - Position ${item.position}` : ""}`;
+        }
+        if (item.status === "RESERVED") next[item.slot_id] = "Reserved";
+      });
+      return next;
+    });
+  };
+
   const loadSchedule = useCallback(async () => {
-    setGuestSchedule((await fetchGuestSchedule(guestId)) || []);
+    const schedule = (await fetchGuestSchedule(guestId)) || [];
+    setGuestSchedule(schedule);
+    hydrateActionStates(schedule);
   }, [guestId]);
 
   const loadAnalytics = useCallback(async (clearMessage = true) => {
@@ -272,13 +306,22 @@ export default function BusyAnalyticsDashboard() {
     try {
       const result = await postEvent(propertyId, slotId, eventType, guestId);
       if (result.success) {
+        const nextState = eventType === "RESERVE"
+          ? "RESERVED"
+          : eventType === "CANCEL"
+            ? "CANCELLED"
+            : "WAITLISTED";
         setActionStates((current) => ({
           ...current,
-          [slotId]: eventType === "RESERVE"
-            ? "RESERVED"
-            : eventType === "CANCEL"
-              ? "CANCELLED"
-              : "WAITLISTED",
+          [slotId]: nextState,
+        }));
+        setActionMessages((current) => ({
+          ...current,
+          [slotId]: eventType === "WAITLIST"
+            ? `Joined Waiting Line${result.waitlist_position ? ` - Position ${result.waitlist_position}` : ""}`
+            : nextState === "RESERVED"
+              ? "Reserved"
+              : "Cancelled",
         }));
       }
       setEventMessage(result.message);
@@ -302,22 +345,46 @@ export default function BusyAnalyticsDashboard() {
     if (actionState === "RESERVED") {
       return (
         <div className="table-action-group">
-          <button className="table-action state-reserved" disabled>Reserved</button>
+          <button className="table-action state-reserved" disabled>{actionMessages[slot.slot_id] || "Reserved"}</button>
           <button className="table-action state-cancel" onClick={() => handleEvent(slot.slot_id, "CANCEL")}>Cancel</button>
         </div>
       );
     }
     if (actionState === "CANCELLED") {
-      return <button className="table-action state-cancelled" disabled>Cancelled</button>;
+      return <button className="table-action state-cancelled" disabled>{actionMessages[slot.slot_id] || "Cancelled"}</button>;
     }
     if (actionState === "WAITLISTED") {
-      return <button className="table-action state-waitlisted" disabled>Added to Waiting List</button>;
+      return <button className="table-action state-waitlisted" disabled>{actionMessages[slot.slot_id] || "Joined Waiting Line"}</button>;
     }
     return (
       <button className="table-action" onClick={() => handleEvent(slot.slot_id, full ? "WAITLIST" : "RESERVE")}>
         {full ? "Join Waiting Line" : "Reserve"}
       </button>
     );
+  };
+
+  const anyConsentEnabled = Object.values(consentOptions).some(Boolean);
+
+  const toggleConsentOption = (key) => {
+    setConsentOptions((current) => ({ ...current, [key]: !current[key] }));
+  };
+
+  const completeLandingCheckIn = async () => {
+    await checkInGuest({
+      guest_id: guestId,
+      guest_name: "Taylor Bonvoy",
+      property_id: propertyId,
+      check_in: checkIn,
+      check_out: checkOut,
+    });
+    await saveGuestConsent({
+      guest_id: guestId,
+      property_id: propertyId,
+      plan_your_stay_enabled: anyConsentEnabled,
+      selected_amenities: anyConsentEnabled ? selectedAmenityList : [],
+    });
+    setShowLandingConsent(false);
+    setView("booking");
   };
 
   if (view === "landing") {
@@ -335,6 +402,44 @@ export default function BusyAnalyticsDashboard() {
             <button key={tab} className={tab === "Trips" ? "active" : ""}>{tab}</button>
           ))}
         </nav>
+        {showLandingConsent && (
+          <div className="bonvoy-consent-backdrop" role="dialog" aria-modal="true">
+            <article className="bonvoy-consent-sheet">
+              <button className="bonvoy-consent-close" aria-label="Close" onClick={() => setShowLandingConsent(false)}>×</button>
+              <div className="bonvoy-consent-title-row">
+                <span className="bonvoy-consent-shield">♢</span>
+                <div>
+                  <h2>Enhance Your Stay</h2>
+                  <p>Choose what to enable before checking in</p>
+                </div>
+              </div>
+              <div className="bonvoy-consent-copy">
+                Your data is used only to improve your in-property experience and is never shared with third parties. You can change these preferences at any time.
+              </div>
+              <div className="bonvoy-consent-options">
+                <label>
+                  <span className="option-icon">≋</span>
+                  <span><strong>Live Amenity Availability</strong><small>See real-time busy times for the pool, gym, spa, and dining.</small></span>
+                  <input type="checkbox" checked={consentOptions.liveAvailability} onChange={() => toggleConsentOption("liveAvailability")} />
+                </label>
+                <label>
+                  <span className="option-icon">✧</span>
+                  <span><strong>Personalized Recommendations</strong><small>Suggestions tailored to your preferences and past stays.</small></span>
+                  <input type="checkbox" checked={consentOptions.personalizedRecommendations} onChange={() => toggleConsentOption("personalizedRecommendations")} />
+                </label>
+                <label>
+                  <span className="option-icon">♧</span>
+                  <span><strong>Availability Alerts</strong><small>Push notifications when your preferred amenities are quiet.</small></span>
+                  <input type="checkbox" checked={consentOptions.availabilityAlerts} onChange={() => toggleConsentOption("availabilityAlerts")} />
+                </label>
+              </div>
+              <button className="bonvoy-consent-primary" onClick={completeLandingCheckIn}>
+                {anyConsentEnabled ? "Check In and Enhance Stay" : "Check In Without Recommendations"}
+              </button>
+              <button className="bonvoy-consent-skip" onClick={completeLandingCheckIn}>Skip for now</button>
+            </article>
+          </div>
+        )}
         <main className="bonvoy-content">
           <section className="member-card">
             <div className="member-greeting">Hi, Srikar reddy</div>
@@ -348,9 +453,9 @@ export default function BusyAnalyticsDashboard() {
             <div className="trip-tab-buttons"><button className="active">Upcoming Trips</button><button>Cancelled Trips</button></div>
             <button className="reservation-search">Can&apos;t find a reservation? Search here</button>
           </section>
-          <section className="upcoming-trip-card" onClick={() => setView("booking")} role="button" tabIndex={0}>
+          <section className="upcoming-trip-card">
             <div><span className="eyebrow">Upcoming Trip</span><h2>{tripPropertyName}</h2><p>Anaheim, California · {checkIn} - {checkOut}</p></div>
-            <button onClick={(event) => { event.stopPropagation(); setView("booking"); }}>View Trip</button>
+            <button onClick={() => setShowLandingConsent(true)}>Check In</button>
           </section>
         </main>
       </div>

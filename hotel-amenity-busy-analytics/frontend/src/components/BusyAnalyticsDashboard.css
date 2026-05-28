@@ -3343,3 +3343,162 @@ input {
     grid-template-columns: 1fr;
   }
 }
+
+/* Bonvoy check-in consent sheet */
+.bonvoy-consent-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(3, 7, 12, 0.76);
+}
+
+.bonvoy-consent-sheet {
+  position: relative;
+  width: min(680px, 94vw);
+  padding: 34px 42px 40px;
+  border: 1px solid rgba(215, 188, 128, 0.25);
+  border-radius: 46px;
+  background: #151b24;
+  color: #f5efe1;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.42);
+}
+
+.bonvoy-consent-sheet::before {
+  position: absolute;
+  top: 22px;
+  left: 50%;
+  width: 62px;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(215, 188, 128, 0.32);
+  content: "";
+  transform: translateX(-50%);
+}
+
+.bonvoy-consent-close {
+  position: absolute;
+  top: 30px;
+  right: 32px;
+  width: 52px;
+  height: 52px;
+  border: 0;
+  border-radius: 16px;
+  background: #242b36;
+  color: #9daac3;
+  cursor: pointer;
+  font-size: 2rem;
+}
+
+.bonvoy-consent-title-row {
+  display: grid;
+  grid-template-columns: 74px 1fr;
+  gap: 20px;
+  align-items: center;
+  margin-top: 28px;
+}
+
+.bonvoy-consent-shield,
+.option-icon {
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(215, 188, 128, 0.28);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #d1b575;
+}
+
+.bonvoy-consent-shield {
+  width: 74px;
+  height: 74px;
+  font-size: 2rem;
+}
+
+.bonvoy-consent-title-row h2 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 2rem;
+}
+
+.bonvoy-consent-title-row p,
+.bonvoy-consent-copy,
+.bonvoy-consent-options small,
+.bonvoy-consent-skip {
+  color: #9daac3;
+}
+
+.bonvoy-consent-title-row p {
+  margin: 6px 0 0;
+  font-weight: 700;
+}
+
+.bonvoy-consent-copy {
+  margin: 26px 0;
+  padding: 20px 24px;
+  border: 1px solid rgba(215, 188, 128, 0.16);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  line-height: 1.55;
+}
+
+.bonvoy-consent-options {
+  display: grid;
+}
+
+.bonvoy-consent-options label {
+  display: grid;
+  grid-template-columns: 68px 1fr auto;
+  gap: 18px;
+  align-items: center;
+  padding: 22px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.option-icon {
+  width: 68px;
+  height: 68px;
+  color: #7f8aa4;
+  font-size: 1.5rem;
+}
+
+.bonvoy-consent-options strong {
+  display: block;
+  color: #f5efe1;
+  font-size: 1.05rem;
+}
+
+.bonvoy-consent-options small {
+  display: block;
+  margin-top: 6px;
+  line-height: 1.45;
+}
+
+.bonvoy-consent-options input {
+  width: 54px;
+  height: 30px;
+  accent-color: #d1b575;
+}
+
+.bonvoy-consent-primary,
+.bonvoy-consent-skip {
+  width: 100%;
+  min-height: 58px;
+  border: 0;
+  border-radius: 18px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.bonvoy-consent-primary {
+  margin-top: 30px;
+  background: #d1b575;
+  color: #101620;
+}
+
+.bonvoy-consent-skip {
+  margin-top: 16px;
+  background: transparent;
+}

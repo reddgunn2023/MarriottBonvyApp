@@ -9,6 +9,7 @@ from services.score_service import recalculate_slot_scores
 _active_slots: dict[str, list[dict]] = {}
 _loaded_ranges: dict[str, tuple[str, str]] = {}
 _guest_schedules: dict[str, list[dict]] = {}
+_guest_waitlists: dict[str, list[dict]] = {}
 logger = logging.getLogger("uvicorn.error")
 
 
@@ -44,8 +45,11 @@ def get_all_slots(
 
 
 def get_guest_schedule(guest_id: str) -> list[dict]:
-    """Return the current guest-specific schedule."""
-    return _guest_schedules.get(guest_id, [])
+    """Return current guest-specific reservations and waitlist entries."""
+    return [
+        *_guest_schedules.get(guest_id, []),
+        *_guest_waitlists.get(guest_id, []),
+    ]
 
 
 def _find_slot(property_id: str, slot_id: str) -> dict | None:
@@ -184,6 +188,7 @@ def cancel(property_id: str, slot_id: str, guest_id: str = "guest-default") -> d
         slot["booked"] += 1
         slot["available"] -= 1
         slot.setdefault("reservedGuests", []).append(promoted_guest)
+        _guest_waitlists[promoted_guest] = [item for item in _guest_waitlists.get(promoted_guest, []) if item["slot_id"] != slot_id]
         _guest_schedules.setdefault(promoted_guest, []).append(_schedule_item(slot))
         if slot["available"] <= 0:
             slot["status"] = "FULL"
@@ -217,11 +222,15 @@ def waitlist(property_id: str, slot_id: str, guest_id: str = "guest-default") ->
     slot.setdefault("waitlistGuests", []).append(guest_id)
     slot["waitlist"] += 1
     position = len(slot["waitlistGuests"])
+    waitlist_item = _schedule_item(slot)
+    waitlist_item["status"] = "WAITLISTED"
+    waitlist_item["position"] = position
+    _guest_waitlists.setdefault(guest_id, []).append(waitlist_item)
 
     return _slot_result(
         slot,
         True,
-        f"Added to waiting list at position {position}",
+        f"You have been added to the waiting list. Your position is {position}.",
         "WAITLIST",
         waitlist_position=position,
         guest_id=guest_id,
