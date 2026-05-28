@@ -478,6 +478,10 @@ def update_dataset_for_event(slot: dict, event_type: str, guest_id: str, message
     """Update the matching CSV row for the event's property/date/time period and log it."""
     seed_csv_datasets()
     path = _dataset_path(slot["amenityId"])
+    if not path.exists():
+        with path.open("w", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=DATASET_FIELDS)
+            writer.writeheader()
     rows = _read_rows(path)
     updated_at = datetime.now(timezone.utc).isoformat()
     matched = False
