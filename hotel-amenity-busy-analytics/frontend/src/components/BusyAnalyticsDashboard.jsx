@@ -289,7 +289,11 @@ export default function BusyAnalyticsDashboard() {
 
   if (view === "landing") {
     return (
-      <div className="bonvoy-page enterprise-bonvoy-page">
+      <div className="bonvoy-page enterprise-bonvoy-page bonvoy-mobile-app">
+        <header className="bonvoy-mobile-header">
+          <div className="bonvoy-mobile-logo"><span>Marriott</span><strong>Bonvoy</strong></div>
+          <div className="bonvoy-mobile-profile"><span>Hi, Srikar</span><strong>6,531 pts</strong></div>
+        </header>
         <header className="bonvoy-topbar">
           <div className="bonvoy-logo"><span>Marriott</span><strong>Bonvoy</strong></div>
           <nav className="bonvoy-main-nav" aria-label="Marriott Bonvoy navigation">
@@ -320,12 +324,23 @@ export default function BusyAnalyticsDashboard() {
             <button onClick={(event) => { event.stopPropagation(); setView("booking"); }}>View Trip</button>
           </section>
         </main>
+        <nav className="bonvoy-bottom-nav" aria-label="Bonvoy app navigation">
+          <span>⌂<strong>Home</strong></span>
+          <span>⌕<strong>Search</strong></span>
+          <span className="active">▣<strong>Trips</strong></span>
+          <span>★<strong>Account</strong></span>
+        </nav>
       </div>
     );
   }
 
   return (
-    <div className="enterprise-page marriott-hotel-page">
+    <div className="enterprise-page marriott-hotel-page bonvoy-mobile-app">
+      <header className="bonvoy-mobile-header">
+        <button className="bonvoy-back-button" onClick={() => setView("landing")}>‹</button>
+        <div className="bonvoy-mobile-logo"><span>Marriott</span><strong>Bonvoy</strong></div>
+        <div className="bonvoy-mobile-profile"><span>Trip</span><strong>Active</strong></div>
+      </header>
       {showConsentModal && (
         <div className="consent-modal-backdrop" role="dialog" aria-modal="true">
           <article className="consent-modal-card enterprise-consent-card">
@@ -525,6 +540,12 @@ export default function BusyAnalyticsDashboard() {
           </>
         )}
       </main>
+      <nav className="bonvoy-bottom-nav" aria-label="Bonvoy app navigation">
+        <span>⌂<strong>Home</strong></span>
+        <span>⌕<strong>Search</strong></span>
+        <span className="active">▣<strong>Trips</strong></span>
+        <span>★<strong>Account</strong></span>
+      </nav>
     </div>
   );
 }
