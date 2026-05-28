@@ -3175,3 +3175,171 @@ input {
     flex-direction: column;
   }
 }
+
+
+/* Marriott-style Featured Amenities On-Site tabs */
+.featured-onsite-section {
+  max-width: 1180px;
+  margin: 28px auto 22px;
+  padding: 34px 48px 44px;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: #fff;
+}
+
+.featured-onsite-heading {
+  text-align: center;
+}
+
+.featured-onsite-heading h2 {
+  margin: 0;
+  color: #2f2f2f;
+  font-size: clamp(2rem, 4vw, 3.3rem);
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.featured-onsite-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 28px;
+  margin-top: 22px;
+  border-bottom: 1px solid #cfcfcf;
+}
+
+.featured-onsite-tabs button {
+  position: relative;
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  color: #666;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.featured-onsite-tabs button.active {
+  color: #222;
+}
+
+.featured-onsite-tabs button.active::after {
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 3px;
+  background: #1f6f9f;
+  content: "";
+}
+
+.featured-onsite-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: 28px;
+}
+
+.featured-onsite-title-row h3 {
+  margin: 0;
+  color: #2f2f2f;
+  font-size: clamp(1.45rem, 3vw, 2.2rem);
+  font-weight: 500;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.featured-onsite-title-row span {
+  color: #333;
+  font-size: 0.95rem;
+}
+
+.featured-onsite-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 28px 44px;
+  margin-top: 34px;
+}
+
+.featured-onsite-item {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 12px;
+  align-items: start;
+  min-height: 58px;
+  border: 0;
+  background: transparent;
+  color: #2d2d2d;
+  cursor: pointer;
+  text-align: left;
+}
+
+.featured-onsite-item:disabled {
+  cursor: default;
+  opacity: 0.8;
+}
+
+.featured-onsite-item.active strong,
+.featured-onsite-item:hover:not(:disabled) strong {
+  color: #1f6f9f;
+}
+
+.featured-onsite-icon {
+  color: #1f6f9f;
+  font-size: 1.25rem;
+  line-height: 1.1;
+}
+
+.featured-onsite-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.featured-onsite-copy strong {
+  color: #2f2f2f;
+  font-size: 0.93rem;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.featured-onsite-copy small {
+  color: #777;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  white-space: pre-line;
+}
+
+.featured-onsite-help {
+  margin: 30px 0 0;
+  color: #666;
+  font-size: 0.95rem;
+}
+
+@media (max-width: 980px) {
+  .featured-onsite-section {
+    padding-right: 20px;
+    padding-left: 20px;
+  }
+
+  .featured-onsite-tabs {
+    justify-content: flex-start;
+    overflow-x: auto;
+  }
+
+  .featured-onsite-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .featured-onsite-title-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 620px) {
+  .featured-onsite-grid {
+    grid-template-columns: 1fr;
+  }
+}

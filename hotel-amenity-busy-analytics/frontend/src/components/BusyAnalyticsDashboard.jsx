@@ -22,19 +22,44 @@ import "./BusyAnalyticsDashboard.css";
 
 const DEFAULT_HOTEL_NAME = "Residence Inn at Anaheim Resort/Convention Center";
 const IMPORTANT_AMENITIES = ["Free Breakfast", "Pool", "Fitness Center", "Lounges"];
-const AMENITY_ICON_MAP = {
-  "Free Breakfast": "☕",
-  Pool: "≈",
-  "Fitness Center": "🏋",
-  Lounges: "🍸",
-  Golf: "⛳",
-  Spa: "✦",
-  Tennis: "🎾",
-  Cabanas: "⛱",
-  "EV Charging": "⚡",
-  Restaurants: "🍽",
-  "Whirlpool Onsite": "♨",
-};
+const FEATURED_AMENITY_TABS = [
+  { id: "property", label: "Property Amenities", count: 12 },
+  { id: "room", label: "Room Amenities", count: 4 },
+  { id: "hotel", label: "Hotel Services", count: 7 },
+  { id: "all", label: "View All", count: 23 },
+];
+
+const PROPERTY_AMENITIES_ONSITE = [
+  { icon: "♻", name: "Sustainability" },
+  { icon: "🍽", name: "Restaurant On-Site", detail: "1 Restaurant", amenity: "Restaurants" },
+  { icon: "✓", name: "Convenience Store" },
+  { icon: "🛏", name: "All-Suites" },
+  { icon: "≈", name: "Outdoor Pool", detail: "Complimentary", amenity: "Pool" },
+  { icon: "♨", name: "Whirlpool", detail: "Complimentary", amenity: "Whirlpool Onsite" },
+  { icon: "⛱", name: "Cabanas/Palapas", detail: "$250.00", amenity: "Cabanas" },
+  { icon: "🍸", name: "On-Site Bar", detail: "1 Bar", amenity: "Lounges" },
+  { icon: "▣", name: "Business Center" },
+  { icon: "▤", name: "Meeting Space" },
+  { icon: "🏋", name: "Fitness Center", detail: "Complimentary", amenity: "Fitness Center" },
+  { icon: "▧", name: "On-Site Laundry" },
+];
+
+const ROOM_AMENITIES_ONSITE = [
+  { icon: "▤", name: "Full Kitchen" },
+  { icon: "☕", name: "Coffee Maker" },
+  { icon: "⌁", name: "Free WiFi" },
+  { icon: "▣", name: "Ergonomic Workspace" },
+];
+
+const HOTEL_SERVICES_ONSITE = [
+  { icon: "☕", name: "Free Hot Breakfast", detail: "Monday-Friday 6:30 AM-9:30 AM\nSaturday-Sunday 7:00 AM-10:00 AM", amenity: "Free Breakfast" },
+  { icon: "✓", name: "Free Coffee/Tea in Lobby" },
+  { icon: "♿", name: "Valet Dry Cleaning" },
+  { icon: "♿", name: "Same Day Dry Cleaning" },
+  { icon: "☼", name: "Wake-Up Calls" },
+  { icon: "↗", name: "Service Request" },
+  { icon: "✓", name: "Housekeeping", detail: "Every Other Day" },
+];
 
 function todayStr() {
   return "2026-03-26";
@@ -107,6 +132,7 @@ export default function BusyAnalyticsDashboard() {
   const [, setGuestSchedule] = useState([]);
   const [view, setView] = useState("landing");
   const [showConsentModal, setShowConsentModal] = useState(false);
+  const [activeAmenityTab, setActiveAmenityTab] = useState("property");
 
   useEffect(() => {
     async function loadInitialData() {
@@ -138,7 +164,20 @@ export default function BusyAnalyticsDashboard() {
   );
 
   const tripPropertyName = selectedProperty?.name || DEFAULT_HOTEL_NAME;
-
+  const featuredItems = activeAmenityTab === "hotel"
+    ? HOTEL_SERVICES_ONSITE
+    : activeAmenityTab === "room"
+      ? ROOM_AMENITIES_ONSITE
+      : activeAmenityTab === "all"
+        ? [...PROPERTY_AMENITIES_ONSITE, ...ROOM_AMENITIES_ONSITE, ...HOTEL_SERVICES_ONSITE]
+        : PROPERTY_AMENITIES_ONSITE;
+  const featuredTitle = activeAmenityTab === "hotel"
+    ? "Hotel Services On-Site"
+    : activeAmenityTab === "room"
+      ? "Room Amenities On-Site"
+      : activeAmenityTab === "all"
+        ? "All Amenities & Services On-Site"
+        : "Property Amenities On-Site";
 
   const selectedAmenityList = useMemo(() => (amenity ? [amenity] : []), [amenity]);
   const analyticsEntries = Object.entries(analyticsByAmenity);
@@ -479,38 +518,49 @@ export default function BusyAnalyticsDashboard() {
           </section>
         ) : (
           <>
-            <section className="onsite-amenities-overview enterprise-card">
-              <div className="onsite-overview-heading">
-                <span className="eyebrow">Featured Amenities On-Site</span>
-                <h2>Residence Inn amenities and services</h2>
-                <p>Use the analytics add-on below to review hourly busy patterns for a selected onsite amenity or service.</p>
+            <section className="featured-onsite-section enterprise-card">
+              <div className="featured-onsite-heading">
+                <h2>Featured Amenities On-Site</h2>
               </div>
-              <div className="onsite-amenity-list">
-                {amenityTypes.map((item) => (
+              <div className="featured-onsite-tabs" role="tablist" aria-label="Amenities categories">
+                {FEATURED_AMENITY_TABS.map((tab) => (
                   <button
-                    className={`onsite-amenity-button ${amenity === item ? "active" : ""}`}
-                    key={item}
+                    key={tab.id}
+                    className={activeAmenityTab === tab.id ? "active" : ""}
+                    onClick={() => setActiveAmenityTab(tab.id)}
+                    role="tab"
                     type="button"
-                    onClick={() => loadAnalyticsForAmenity(item)}
+                    aria-selected={activeAmenityTab === tab.id}
                   >
-                    <span className="onsite-amenity-icon">{AMENITY_ICON_MAP[item] || "•"}</span>
-                    <span>{item}</span>
+                    {tab.label} ({tab.count})
                   </button>
                 ))}
               </div>
-            </section>
-
-            <section className="enterprise-toolbar enterprise-card single-amenity-toolbar no-dropdown-toolbar">
-              <div className="selected-amenity-summary">
-                <span>Selected Amenity / Service</span>
-                <strong>{amenity}</strong>
-                <small>Choose an onsite amenity above to update analytics.</small>
+              <div className="featured-onsite-title-row">
+                <h3>{featuredTitle}</h3>
+                <span>⊙ included amenities (3)</span>
               </div>
-              <label className="control-group amenity-selector-control">
-                <span>Analytics Date</span>
-                <input type="date" value={selectedAnalyticsDate} min={checkIn} max={checkOut} onChange={(event) => setSelectedAnalyticsDate(event.target.value)} />
-              </label>
-              <button className="black-btn" onClick={() => loadAnalyticsForAmenity(amenity)} disabled={!amenity || loading}>{loading ? "Loading" : "View Analytics"}</button>
+              <div className="featured-onsite-grid">
+                {featuredItems.map((item) => {
+                  const enabled = item.amenity && amenityTypes.includes(item.amenity);
+                  return (
+                    <button
+                      type="button"
+                      key={`${activeAmenityTab}-${item.name}`}
+                      className={`featured-onsite-item ${enabled && amenity === item.amenity ? "active" : ""}`}
+                      disabled={!enabled}
+                      onClick={() => enabled && loadAnalyticsForAmenity(item.amenity)}
+                    >
+                      <span className="featured-onsite-icon">{item.icon}</span>
+                      <span className="featured-onsite-copy">
+                        <strong>{item.name}{enabled ? " ⊙" : ""}</strong>
+                        {item.detail && <small>{item.detail}</small>}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="featured-onsite-help">Select an available onsite amenity or service to view its analytics below.</p>
             </section>
 
             {loading && (
