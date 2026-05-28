@@ -9,14 +9,12 @@ import {
   Cell,
 } from "recharts";
 import {
-  checkInGuest,
   fetchAmenityTypes,
   fetchBusyAnalytics,
   fetchGuestProfile,
   fetchGuestSchedule,
   fetchProperties,
   postEvent,
-  saveGuestConsent,
 } from "../services/amenityApi";
 import "./BusyAnalyticsDashboard.css";
 
@@ -117,13 +115,9 @@ export default function BusyAnalyticsDashboard() {
   const [properties, setProperties] = useState([]);
   const [amenityTypes, setAmenityTypes] = useState([]);
   const [amenity, setAmenity] = useState("Free Breakfast");
-  const [selectedAmenities, setSelectedAmenities] = useState([]);
   const [checkIn, setCheckIn] = useState(todayStr());
   const [checkOut, setCheckOut] = useState(addDays(todayStr(), 3));
   const [selectedAnalyticsDate, setSelectedAnalyticsDate] = useState(todayStr());
-  const [guestName, setGuestName] = useState("Taylor Bonvoy");
-  const [checkedIn, setCheckedIn] = useState(false);
-  const [planEnabled, setPlanEnabled] = useState(false);
   const [analyticsByAmenity, setAnalyticsByAmenity] = useState({});
   const [actionStates, setActionStates] = useState({});
   const [selectedSlotsByAmenity, setSelectedSlotsByAmenity] = useState({});
@@ -131,7 +125,6 @@ export default function BusyAnalyticsDashboard() {
   const [loading, setLoading] = useState(false);
   const [, setGuestSchedule] = useState([]);
   const [view, setView] = useState("landing");
-  const [showConsentModal, setShowConsentModal] = useState(false);
   const [activeAmenityTab, setActiveAmenityTab] = useState("property");
 
   useEffect(() => {
@@ -139,19 +132,15 @@ export default function BusyAnalyticsDashboard() {
       const loadedProperties = await fetchProperties();
       setProperties(loadedProperties);
       const guestProfile = await fetchGuestProfile(guestId);
-      if (guestProfile.guest_name) setGuestName(guestProfile.guest_name);
       if (guestProfile.check_in) {
         setCheckIn(guestProfile.check_in);
         setSelectedAnalyticsDate(guestProfile.check_in);
       }
       if (guestProfile.check_out) setCheckOut(guestProfile.check_out);
-      setCheckedIn(Boolean(guestProfile.checked_in));
-      setPlanEnabled(Boolean(guestProfile.plan_your_stay_enabled));
       const loadedAmenityTypes = await fetchAmenityTypes(propertyId);
       const defaultSelected = (guestProfile.selected_amenities?.length ? guestProfile.selected_amenities : IMPORTANT_AMENITIES)
         .filter((item) => loadedAmenityTypes.includes(item));
       setAmenityTypes(loadedAmenityTypes);
-      setSelectedAmenities(defaultSelected.length ? defaultSelected : loadedAmenityTypes);
       setAmenity(defaultSelected[0] || loadedAmenityTypes[0] || "");
       setGuestSchedule((await fetchGuestSchedule(guestId)) || []);
     }
@@ -279,33 +268,6 @@ export default function BusyAnalyticsDashboard() {
     }
   };
 
-  const handleCheckIn = async () => {
-    const guest = await checkInGuest({
-      guest_id: guestId,
-      guest_name: guestName,
-      property_id: propertyId,
-      check_in: checkIn,
-      check_out: checkOut,
-    });
-    setCheckedIn(guest.checked_in);
-    setShowConsentModal(true);
-    setEventMessage(`${guest.guest_name} checked in.`);
-  };
-
-  const handlePlanToggle = async (enabled) => {
-    const selected = selectedAmenities.length ? selectedAmenities : amenityTypes;
-    const guest = await saveGuestConsent({
-      guest_id: guestId,
-      property_id: propertyId,
-      plan_your_stay_enabled: enabled,
-      selected_amenities: selected,
-    });
-    setPlanEnabled(guest.plan_your_stay_enabled);
-    setSelectedAmenities(guest.selected_amenities);
-    if (guest.plan_your_stay_enabled) setShowConsentModal(false);
-    setEventMessage(enabled ? "Smart Amenity Insights enabled." : "Smart Amenity Insights disabled.");
-  };
-
   const handleEvent = async (slotId, eventType) => {
     try {
       const result = await postEvent(propertyId, slotId, eventType, guestId);
@@ -397,17 +359,6 @@ export default function BusyAnalyticsDashboard() {
 
   return (
     <div className="enterprise-page marriott-hotel-page marriott-web-page">
-      {showConsentModal && (
-        <div className="consent-modal-backdrop" role="dialog" aria-modal="true">
-          <article className="consent-modal-card enterprise-consent-card">
-            <button className="modal-close" aria-label="Close consent dialog" onClick={() => setShowConsentModal(false)}>×</button>
-            <h3>Enable Smart Amenity Insights?</h3>
-            <p>View real-time busy periods, wait times, and personalized recommendations for amenities and services during your stay.</p>
-            <div className="modal-actions"><button className="black-btn" onClick={() => handlePlanToggle(true)}>Enable Insights</button></div>
-          </article>
-        </div>
-      )}
-
       <main className="enterprise-main">
         <section className="hotel-booking-header">
           <div className="hotel-site-nav">
@@ -476,24 +427,6 @@ export default function BusyAnalyticsDashboard() {
 
 
 
-        {!checkedIn && (
-          <section className="enterprise-checkin-panel">
-            <div className="control-group">
-              <label htmlFor="guestName">Guest name</label>
-              <input id="guestName" value={guestName} onChange={(event) => setGuestName(event.target.value)} />
-            </div>
-            <button className="black-btn" onClick={handleCheckIn}>Check In</button>
-          </section>
-        )}
-
-        {checkedIn && !planEnabled && (
-          <section className="enterprise-enable-panel">
-            <h2>Smart Amenity Insights</h2>
-            <p>Enable insights to unlock amenity metrics, waitlist actions, and recommendations.</p>
-            <button className="black-btn" onClick={() => setShowConsentModal(true)}>Enable Feature</button>
-          </section>
-        )}
-
         <section className="featured-onsite-section enterprise-card">
               <div className="featured-onsite-heading">
                 <h2>Featured Amenities On-Site</h2>
@@ -539,8 +472,7 @@ export default function BusyAnalyticsDashboard() {
               <p className="featured-onsite-help">Select an available onsite amenity or service to view its analytics below.</p>
             </section>
 
-        {checkedIn && planEnabled && (
-          <>
+        <>
             {loading && (
               <section className="enterprise-card analytics-loading-state">
                 <strong>Loading analytics...</strong>
@@ -640,7 +572,6 @@ export default function BusyAnalyticsDashboard() {
               </section>
             ))}
           </>
-        )}
 
 
         <section className="marriott-content-band accommodations-band" id="accommodations">
