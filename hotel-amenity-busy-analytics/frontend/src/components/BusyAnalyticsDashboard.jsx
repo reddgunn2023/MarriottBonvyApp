@@ -60,6 +60,22 @@ const HOTEL_SERVICES_ONSITE = [
   { icon: "✓", name: "Housekeeping", detail: "Every Other Day" },
 ];
 
+const AMENITY_OPEN_HOURS = {
+  "Free Breakfast": { monday_friday: "6:30 AM-9:30 AM", saturday_sunday: "7:00 AM-10:00 AM" },
+  Pool: { monday_friday: "7:00 AM-10:00 PM", saturday_sunday: "7:00 AM-10:00 PM" },
+  "Fitness Center": { monday_friday: "6:00 AM-10:00 PM", saturday_sunday: "6:00 AM-10:00 PM" },
+  "On-Site Bar": { monday_friday: "5:00 PM-10:00 PM", saturday_sunday: "5:00 PM-10:00 PM" },
+  Restaurants: { monday_friday: "6:30 AM-9:30 AM", saturday_sunday: "7:00 AM-10:00 AM" },
+  Golf: { monday_friday: "6:00 AM-6:00 PM", saturday_sunday: "6:00 AM-6:00 PM" },
+  Spa: { monday_friday: "9:00 AM-8:00 PM", saturday_sunday: "9:00 AM-8:00 PM" },
+  Tennis: { monday_friday: "6:00 AM-10:00 PM", saturday_sunday: "6:00 AM-10:00 PM" },
+  Cabanas: { monday_friday: "9:00 AM-6:00 PM", saturday_sunday: "9:00 AM-6:00 PM" },
+  "Whirlpool Onsite": { monday_friday: "7:00 AM-10:00 PM", saturday_sunday: "7:00 AM-10:00 PM" },
+  "Business Center": { monday_friday: "7:00 AM-10:00 PM", saturday_sunday: "7:00 AM-10:00 PM" },
+  "Meeting Space": { monday_friday: "8:00 AM-8:00 PM", saturday_sunday: "8:00 AM-8:00 PM" },
+  "EV Charging": { monday_friday: "12:00 AM-11:59 PM", saturday_sunday: "12:00 AM-11:59 PM" },
+};
+
 function todayStr() {
   return "2026-07-01";
 }
@@ -103,6 +119,14 @@ function formatTimeSlot(slot) {
 
 function formatStartHour(slot) {
   return formatTimeSlot(slot).split("-")[0];
+}
+
+function formatOpenHours(hours) {
+  if (!hours) return "Open hours unavailable";
+  const weekday = hours.monday_friday || hours.weekday;
+  const weekend = hours.saturday_sunday || hours.weekend;
+  if (weekday && weekend && weekday === weekend) return `Open daily ${weekday}`;
+  return [weekday ? `Mon-Fri ${weekday}` : null, weekend ? `Sat-Sun ${weekend}` : null].filter(Boolean).join(" · ");
 }
 
 function routeContext() {
@@ -167,6 +191,8 @@ export default function BusyAnalyticsDashboard() {
   );
 
   const tripPropertyName = selectedProperty?.name || DEFAULT_HOTEL_NAME;
+  const selectedAmenityDetails = selectedProperty?.amenities?.find((item) => item.name === amenity);
+  const selectedAmenityOpenHours = selectedAmenityDetails?.openHours || selectedAmenityDetails?.hours || AMENITY_OPEN_HOURS[amenity];
   const featuredItems = activeAmenityTab === "hotel"
     ? HOTEL_SERVICES_ONSITE
     : activeAmenityTab === "room"
@@ -560,6 +586,7 @@ export default function BusyAnalyticsDashboard() {
                     <span className="eyebrow">Stay Range Metrics</span>
                     <h2>{amenityName}</h2>
                     <p>Hourly busy and demand metrics are shown for the selected analytics date.</p>
+                    <small className="graph-open-hours">{formatOpenHours(selectedAmenityOpenHours)}</small>
                   </div>
                   <label className="graph-date-select">
                     <span>Analytics Date</span>
@@ -632,9 +659,9 @@ export default function BusyAnalyticsDashboard() {
                       <p>{selectedSlotsByAmenity[amenityName].date} · {amenityName}</p>
                     </div>
                     <div className="expected-busy-card">
-                      <span>Expected Busy</span>
+                      <span>Expected</span>
                       <strong>{scoreLevel(selectedSlotsByAmenity[amenityName].future_busy) === "High" ? "Very busy" : scoreLevel(selectedSlotsByAmenity[amenityName].future_busy) === "Moderate" ? "Moderate busy" : "Not busy"}</strong>
-                      {selectedSlotsByAmenity[amenityName].seasonal_event && (
+                      {selectedSlotsByAmenity[amenityName].weather_blocked && selectedSlotsByAmenity[amenityName].seasonal_event && (
                         <small>{selectedSlotsByAmenity[amenityName].seasonal_event}</small>
                       )}
                     </div>

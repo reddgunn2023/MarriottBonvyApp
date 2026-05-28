@@ -3677,3 +3677,26 @@ input {
     width: 100%;
   }
 }
+
+
+.graph-open-hours {
+  display: inline-block;
+  margin-top: 6px;
+  color: #6c625a;
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.featured-analytics-canvas .graph-date-select {
+  min-width: 132px;
+}
+
+.featured-analytics-canvas .graph-date-select select {
+  min-height: 34px;
+  padding: 0 8px;
+  font-size: 0.82rem;
+}
+
+.featured-analytics-canvas .graph-date-select span {
+  font-size: 0.62rem;
+}
