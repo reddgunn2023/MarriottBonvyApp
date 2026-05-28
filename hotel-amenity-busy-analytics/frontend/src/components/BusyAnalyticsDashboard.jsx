@@ -610,10 +610,10 @@ export default function BusyAnalyticsDashboard() {
                 <div className="analytics-heading"><div><span className="eyebrow">Stay Range Metrics</span><h2>{amenityName}</h2><p>Hourly busy and demand metrics for the selected date are shown below as an onsite amenities analytics add-on.</p></div></div>
                 <div className="enterprise-chart-frame">
                   <BarChart
-                    width={Math.max(720, chartDataFor(rows).length * 72)}
-                    height={380}
+                    width={Math.max(680, chartDataFor(rows).length * 58)}
+                    height={260}
                     data={chartDataFor(rows)}
-                    margin={{ top: 18, right: 24, left: 8, bottom: 96 }}
+                    margin={{ top: 12, right: 20, left: 4, bottom: 52 }}
                     onClick={(event) => {
                       const slot = event?.activePayload?.[0]?.payload?.slot;
                       if (slot) {
@@ -628,8 +628,8 @@ export default function BusyAnalyticsDashboard() {
                       minTickGap={0}
                       angle={-55}
                       textAnchor="end"
-                      height={96}
-                      tick={{ fontSize: 10 }}
+                      height={52}
+                      tick={{ fontSize: 11 }}
                     />
                     <YAxis domain={[0, 1]} />
                     <Tooltip

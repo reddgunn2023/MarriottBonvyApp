@@ -3544,3 +3544,45 @@ input {
   color: #7a6d60;
   font-weight: 800;
 }
+
+/* Compact analytics canvas to remove chart/detail gaps */
+.featured-analytics-canvas .analytics-heading {
+  margin-bottom: 12px;
+}
+
+.featured-analytics-canvas .analytics-heading h2 {
+  font-size: 1.55rem;
+}
+
+.featured-analytics-canvas .analytics-heading p {
+  margin-top: 4px;
+}
+
+.featured-analytics-canvas .enterprise-chart-frame {
+  padding: 12px 14px 6px;
+  min-height: 0;
+}
+
+.featured-analytics-canvas .chart-color-legend {
+  margin-top: 8px;
+  padding: 8px 12px;
+}
+
+.featured-analytics-canvas .slot-detail-card {
+  grid-template-columns: minmax(180px, 0.7fr) minmax(260px, 1fr) auto;
+  gap: 14px;
+  margin-top: 10px;
+  padding: 14px 16px;
+}
+
+.featured-analytics-canvas .slot-detail-card h3 {
+  font-size: 1.55rem;
+}
+
+.featured-analytics-canvas .forecast-detail-note {
+  padding: 10px 12px;
+}
+
+.featured-analytics-canvas .expected-busy-card {
+  padding: 14px 16px;
+}
