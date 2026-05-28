@@ -104,6 +104,24 @@ AMENITY_COLLECTIONS = [
         "capacity": 12,
     },
     {
+        "id": "business-center",
+        "name": "Business Center",
+        "collection": "businessCenter",
+        "category": "Business",
+        "service_type": "open_window",
+        "description": "Business center access for printing, workstations, and productivity needs.",
+        "capacity": 10,
+    },
+    {
+        "id": "meeting-space",
+        "name": "Meeting Space",
+        "collection": "meetingSpace",
+        "category": "Business",
+        "service_type": "reservation",
+        "description": "Small meeting room availability for groups and event planning.",
+        "capacity": 12,
+    },
+    {
         "id": "ev-charging",
         "name": "EV Charging",
         "collection": "evCharging",
@@ -155,6 +173,14 @@ OPEN_HOURS_BY_AMENITY = {
         "monday_friday": "9:00 AM-6:00 PM",
         "saturday_sunday": "9:00 AM-6:00 PM",
     },
+    "business-center": {
+        "monday_friday": "7:00 AM-10:00 PM",
+        "saturday_sunday": "7:00 AM-10:00 PM",
+    },
+    "meeting-space": {
+        "monday_friday": "8:00 AM-8:00 PM",
+        "saturday_sunday": "8:00 AM-8:00 PM",
+    },
     "ev-charging": {
         "monday_friday": "12:00 AM-11:59 PM",
         "saturday_sunday": "12:00 AM-11:59 PM",
@@ -183,6 +209,8 @@ PROPERTIES = [
             "lounges",
             "tennis",
             "cabanas",
+            "business-center",
+            "meeting-space",
             "ev-charging",
         ],
         "services": ["Digital Check In", "Mobile Key", "Service Request", "Wake-Up Calls", "Laundry", "Dry Cleaning Service", "Gift Shop"],
@@ -199,6 +227,8 @@ PROPERTIES = [
             "lounges",
             "tennis",
             "cabanas",
+            "business-center",
+            "meeting-space",
             "ev-charging",
         ],
         "services": ["Club Lounge", "Private Dining", "Valet", "Concierge"],
@@ -214,6 +244,8 @@ PROPERTIES = [
             "lounges",
             "tennis",
             "cabanas",
+            "business-center",
+            "meeting-space",
             "ev-charging",
         ],
         "services": ["Rooftop Pool", "Nightlife", "Valet", "Concierge"],
@@ -244,93 +276,55 @@ GUESTS = {
 }
 
 TIME_SLOTS = [
-    "00:00-00:30",
-    "00:30-01:00",
-    "01:00-01:30",
-    "01:30-02:00",
-    "02:00-02:30",
-    "02:30-03:00",
-    "03:00-03:30",
-    "03:30-04:00",
-    "04:00-04:30",
-    "04:30-05:00",
-    "05:00-05:30",
-    "05:30-06:00",
-    "06:00-06:30",
-    "06:30-07:00",
-    "07:00-07:30",
-    "07:30-08:00",
-    "08:00-08:30",
-    "08:30-09:00",
-    "09:00-09:30",
-    "09:30-10:00",
-    "10:00-10:30",
-    "10:30-11:00",
-    "11:00-11:30",
-    "11:30-12:00",
-    "12:00-12:30",
-    "12:30-13:00",
-    "13:00-13:30",
-    "13:30-14:00",
-    "14:00-14:30",
-    "14:30-15:00",
-    "15:00-15:30",
-    "15:30-16:00",
-    "16:00-16:30",
-    "16:30-17:00",
-    "17:00-17:30",
-    "17:30-18:00",
-    "18:00-18:30",
-    "18:30-19:00",
-    "19:00-19:30",
-    "19:30-20:00",
-    "20:00-20:30",
-    "20:30-21:00",
-    "21:00-21:30",
-    "21:30-22:00",
-    "22:00-22:30",
-    "22:30-23:00",
-    "23:00-23:30",
-    "23:30-00:00",
+    "00:00-01:00",
+    "01:00-02:00",
+    "02:00-03:00",
+    "03:00-04:00",
+    "04:00-05:00",
+    "05:00-06:00",
+    "06:00-07:00",
+    "07:00-08:00",
+    "08:00-09:00",
+    "09:00-10:00",
+    "10:00-11:00",
+    "11:00-12:00",
+    "12:00-13:00",
+    "13:00-14:00",
+    "14:00-15:00",
+    "15:00-16:00",
+    "16:00-17:00",
+    "17:00-18:00",
+    "18:00-19:00",
+    "19:00-20:00",
+    "20:00-21:00",
+    "21:00-22:00",
+    "22:00-23:00",
+    "23:00-00:00",
 ]
 def _expand_pattern(values: list[float]) -> list[float]:
-    """Expand coarse 2-hour demand pattern into 30-minute intervals."""
-    return [value for value in values for _ in range(4)]
+    """Return hourly demand pattern values."""
+    return values
 
 
 def _pattern_with_overrides(overrides: dict[int, float], default: float = 0.05) -> list[float]:
-    """Create a 48-slot 30-minute pattern with slot-specific busy levels."""
+    """Create a 24-slot hourly pattern with slot-specific busy levels."""
     return [overrides.get(index, default) for index in range(len(TIME_SLOTS))]
 
 
 _PEAK_PATTERNS = {
-    "Golf": _expand_pattern([0.0, 0.1, 0.7, 0.95, 0.85, 0.6, 0.5, 0.3, 0.1, 0.0, 0.0, 0.0]),
-    "Spa": _expand_pattern([0.0, 0.1, 0.3, 0.5, 0.9, 1.0, 0.85, 0.7, 0.6, 0.2, 0.1, 0.0]),
-    "Fitness Center": _pattern_with_overrides({
-        10: 0.50, 11: 0.72, 12: 0.88, 13: 0.74, 14: 0.56, 15: 0.42,
-        16: 0.32, 17: 0.28, 18: 0.24, 19: 0.22, 20: 0.30, 21: 0.36,
-        22: 0.44, 23: 0.52, 24: 0.48, 25: 0.40, 26: 0.35, 27: 0.33,
-        28: 0.38, 29: 0.46, 30: 0.60, 31: 0.76, 32: 0.90, 33: 0.82,
-        34: 0.66, 35: 0.50, 36: 0.38, 37: 0.28, 38: 0.22, 39: 0.18,
-        40: 0.16, 41: 0.14, 42: 0.12, 43: 0.10, 44: 0.08, 45: 0.06,
-    }, default=0.04),
-    "Pool": _pattern_with_overrides({
-        14: 0.18, 15: 0.24, 16: 0.34, 17: 0.46, 18: 0.58, 19: 0.70,
-        20: 0.84, 21: 0.96, 22: 1.00, 23: 0.92, 24: 0.86, 25: 0.78,
-        26: 0.72, 27: 0.66, 28: 0.58, 29: 0.50, 30: 0.42, 31: 0.34,
-        32: 0.28, 33: 0.22, 34: 0.18, 35: 0.14, 36: 0.12, 37: 0.10,
-        38: 0.08, 39: 0.07, 40: 0.06, 41: 0.05, 42: 0.04, 43: 0.03,
-    }, default=0.02),
-    "Free Breakfast": _pattern_with_overrides({
-        13: 0.35, 14: 0.55, 15: 0.78, 16: 0.96, 17: 0.82, 18: 0.48,
-        19: 0.36,
-    }, default=0.02),
-    "Whirlpool Onsite": _expand_pattern([0.0, 0.0, 0.1, 0.2, 0.45, 0.65, 0.75, 0.8, 0.9, 0.6, 0.3, 0.1]),
-    "Restaurants": _expand_pattern([0.0, 0.0, 0.05, 0.1, 0.35, 0.65, 0.55, 0.85, 1.0, 0.9, 0.5, 0.2]),
-    "Lounges": _expand_pattern([0.0, 0.0, 0.0, 0.05, 0.1, 0.25, 0.4, 0.65, 0.95, 1.0, 0.7, 0.2]),
-    "Tennis": _expand_pattern([0.0, 0.0, 0.25, 0.45, 0.75, 0.85, 0.65, 0.5, 0.35, 0.15, 0.0, 0.0]),
-    "Cabanas": _expand_pattern([0.0, 0.0, 0.1, 0.25, 0.55, 0.8, 1.0, 0.75, 0.45, 0.1, 0.0, 0.0]),
-    "EV Charging": _expand_pattern([0.2, 0.3, 0.45, 0.65, 0.7, 0.55, 0.5, 0.75, 1.0, 0.7, 0.4, 0.2]),
+    "Golf": _expand_pattern([0.0, 0.1, 0.7, 0.95, 0.85, 0.6, 0.5, 0.3, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
+    "Spa": _expand_pattern([0.0, 0.1, 0.3, 0.5, 0.9, 1.0, 0.85, 0.7, 0.6, 0.2, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
+    "Fitness Center": _pattern_with_overrides({6: 0.68, 7: 0.52, 8: 0.34, 9: 0.24, 10: 0.30, 11: 0.44, 12: 0.48, 13: 0.35, 14: 0.38, 15: 0.60, 16: 0.86, 17: 0.74, 18: 0.55, 19: 0.36, 20: 0.20, 21: 0.12}, default=0.04),
+    "Pool": _pattern_with_overrides({7: 0.22, 8: 0.40, 9: 0.64, 10: 0.88, 11: 1.0, 12: 0.92, 13: 0.78, 14: 0.62, 15: 0.48, 16: 0.32, 17: 0.18, 18: 0.10, 19: 0.08, 20: 0.05, 21: 0.04}, default=0.02),
+    "Free Breakfast": _pattern_with_overrides({6: 0.42, 7: 0.82, 8: 0.96, 9: 0.48}, default=0.02),
+    "Whirlpool Onsite": _expand_pattern([0.0, 0.0, 0.1, 0.2, 0.45, 0.65, 0.75, 0.8, 0.9, 0.6, 0.3, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
+    "Restaurants": _expand_pattern([0.0, 0.0, 0.05, 0.1, 0.35, 0.65, 0.55, 0.85, 1.0, 0.9, 0.5, 0.2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
+    "Lounges": _expand_pattern([0.0, 0.0, 0.0, 0.05, 0.1, 0.25, 0.4, 0.65, 0.95, 1.0, 0.7, 0.2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
+    "Tennis": _expand_pattern([0.0, 0.0, 0.25, 0.45, 0.75, 0.85, 0.65, 0.5, 0.35, 0.15, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
+    "Cabanas": _expand_pattern([0.0, 0.0, 0.1, 0.25, 0.55, 0.8, 1.0, 0.75, 0.45, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
+    "Business Center": _pattern_with_overrides({7: 0.25, 8: 0.45, 9: 0.62, 10: 0.54, 11: 0.38, 12: 0.30, 13: 0.42, 14: 0.58, 15: 0.64, 16: 0.48, 17: 0.30, 18: 0.18, 19: 0.12, 20: 0.08, 21: 0.05}, default=0.02),
+    "Meeting Space": _pattern_with_overrides({8: 0.35, 9: 0.70, 10: 0.82, 11: 0.56, 12: 0.30, 13: 0.40, 14: 0.74, 15: 0.88, 16: 0.66, 17: 0.32, 18: 0.18, 19: 0.08}, default=0.02),
+    "EV Charging": _expand_pattern([0.2, 0.3, 0.45, 0.65, 0.7, 0.55, 0.5, 0.75, 1.0, 0.7, 0.4, 0.2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
 }
 
 _HISTORICAL_BUSY_DATA = [
@@ -386,7 +380,9 @@ def is_slot_open_for_amenity(slot: dict) -> bool:
     slot_end = _time_to_minutes(slot["timeSlot"].split("-", 1)[1])
     if slot_end <= slot_start:
         slot_end += 24 * 60
-    return slot_start >= window["open"] and slot_end <= window["close"]
+    # Hourly analytics should include slots that overlap the amenity window,
+    # e.g. 06:00-07:00 overlaps breakfast opening at 6:30 AM.
+    return slot_start < window["close"] and slot_end > window["open"]
 
 
 def get_property_amenities(property_id: str) -> list[dict]:
@@ -405,7 +401,7 @@ def weather_condition_for(day: date, time_index: int, amenity_name: str) -> str:
     """Deterministic weather signal for local fallback data."""
     if is_severe_weather_window(day, time_index):
         return "severe"
-    if season_for(day) == "summer" and amenity_name in {"Pool", "Golf", "Tennis", "Cabanas"} and 22 <= time_index <= 32:
+    if season_for(day) == "summer" and amenity_name in {"Pool", "Golf", "Tennis", "Cabanas"} and 11 <= time_index <= 16:
         return "heat"
     if day.day % 7 == 0:
         return "rain"
@@ -416,7 +412,7 @@ def traffic_condition_for(day: date, time_index: int) -> str:
     """Deterministic traffic signal for local fallback data."""
     if time_index in {1, 5} and day.weekday() < 5:
         return "heavy"
-    if time_index in {2, 3, 4}:
+    if time_index in {1, 2}:
         return "moderate"
     return "light"
 
@@ -434,10 +430,10 @@ def season_for(day: date) -> str:
 def is_severe_weather_window(day: date, time_index: int) -> bool:
     """Deterministic severe weather windows used to exercise weather impacts."""
     # Summer afternoon storm window for the July guest scenario.
-    if day.month == 7 and day.day in {3, 4} and 24 <= time_index <= 31:
+    if day.month == 7 and day.day in {3, 4} and 12 <= time_index <= 15:
         return True
     # Existing occasional early-morning severe events for mock variability.
-    return day.day in {5, 12, 19, 26} and time_index in {2, 3, 4}
+    return day.day in {5, 12, 19, 26} and time_index in {1, 2}
 
 
 def _historical_variance(current_date: date, time_index: int, amenity_id: str) -> float:

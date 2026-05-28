@@ -540,7 +540,7 @@ export default function BusyAnalyticsDashboard() {
             {loading && (
               <section className="enterprise-card analytics-loading-state">
                 <strong>Loading analytics...</strong>
-                <p>Preparing workbook-backed 30-minute metrics, demand, weather, traffic, and forecast details.</p>
+                <p>Preparing workbook-backed hourly metrics, demand, weather, traffic, and forecast details.</p>
               </section>
             )}
 
