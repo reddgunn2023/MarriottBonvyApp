@@ -597,7 +597,7 @@ export default function BusyAnalyticsDashboard() {
                     <small className="graph-open-hours">{formatOpenHours(selectedAmenityOpenHours)}</small>
                   </div>
                   <label className="graph-date-select">
-                    <span>Date</span>
+                    <span>select the stay dates</span>
                     <select
                       value={selectedAnalyticsDate}
                       onChange={(event) => {
@@ -678,9 +678,8 @@ export default function BusyAnalyticsDashboard() {
                       <p className="slot-event-message">{eventMessage}</p>
                     )}
                     <div className="forecast-detail-note">
-                      <strong>Forecast details</strong>
+                      <strong>What to expect</strong>
                       <p>{forecastSummary(selectedSlotsByAmenity[amenityName])}</p>
-                      <small>Signals: busy {selectedSlotsByAmenity[amenityName].busy_score.toFixed(2)}, demand {selectedSlotsByAmenity[amenityName].demand_score.toFixed(2)}, weather {selectedSlotsByAmenity[amenityName].weather_condition || "clear"}, traffic {selectedSlotsByAmenity[amenityName].traffic_condition || "light"}{selectedSlotsByAmenity[amenityName].indoor_weather_boost ? ", indoor demand boosted by weather" : ""}.</small>
                       {selectedSlotsByAmenity[amenityName].weather_blocked && (
                         <small className="weather-impact-note">Outdoor activity might be cancelled due to severe weather forecast for this time period.</small>
                       )}
