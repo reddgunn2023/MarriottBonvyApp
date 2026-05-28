@@ -255,17 +255,17 @@ PROPERTIES = [
 GUESTS = {
     "guest-default": {
         "guest_id": "guest-default",
-        "guest_name": "Taylor Bonvoy",
+        "guest_name": "Srikar Reddy",
         "property_id": "prop-001",
-        "check_in": "2026-03-26",
-        "check_out": "2026-03-29",
+        "check_in": "2026-07-01",
+        "check_out": "2026-07-08",
         "checked_in": False,
         "plan_your_stay_enabled": False,
         "selected_amenities": [],
     },
     "july-guest": {
         "guest_id": "july-guest",
-        "guest_name": "Jordan Bonvoy",
+        "guest_name": "Srikar Reddy",
         "property_id": "prop-001",
         "check_in": "2026-07-01",
         "check_out": "2026-07-08",

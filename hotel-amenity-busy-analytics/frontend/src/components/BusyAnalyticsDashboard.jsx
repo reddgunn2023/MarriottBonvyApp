@@ -9,18 +9,17 @@ import {
   Cell,
 } from "recharts";
 import {
-  checkInGuest,
   fetchAmenityTypes,
   fetchBusyAnalytics,
   fetchGuestProfile,
   fetchGuestSchedule,
   fetchProperties,
   postEvent,
-  saveGuestConsent,
 } from "../services/amenityApi";
 import "./BusyAnalyticsDashboard.css";
 
 const DEFAULT_HOTEL_NAME = "Residence Inn at Anaheim Resort/Convention Center";
+const DISPLAY_USER_NAME = "Srikar Reddy";
 const IMPORTANT_AMENITIES = ["Free Breakfast", "Pool", "Fitness Center", "On-Site Bar"];
 const FEATURED_AMENITY_TABS = [
   { id: "property", label: "Property Amenities", count: 12 },
@@ -62,7 +61,7 @@ const HOTEL_SERVICES_ONSITE = [
 ];
 
 function todayStr() {
-  return "2026-03-26";
+  return "2026-07-01";
 }
 
 function addDays(dateStr, days) {
@@ -128,12 +127,6 @@ export default function BusyAnalyticsDashboard() {
   const [actionStates, setActionStates] = useState({});
   const [actionMessages, setActionMessages] = useState({});
   const [selectedSlotsByAmenity, setSelectedSlotsByAmenity] = useState({});
-  const [showLandingConsent, setShowLandingConsent] = useState(false);
-  const [consentOptions, setConsentOptions] = useState({
-    liveAvailability: false,
-    personalizedRecommendations: false,
-    availabilityAlerts: false,
-  });
   const [eventMessage, setEventMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [, setGuestSchedule] = useState([]);
@@ -378,30 +371,6 @@ export default function BusyAnalyticsDashboard() {
     );
   };
 
-  const anyConsentEnabled = Object.values(consentOptions).some(Boolean);
-
-  const toggleConsentOption = (key) => {
-    setConsentOptions((current) => ({ ...current, [key]: !current[key] }));
-  };
-
-  const completeLandingCheckIn = async () => {
-    await checkInGuest({
-      guest_id: guestId,
-      guest_name: "Taylor Bonvoy",
-      property_id: propertyId,
-      check_in: checkIn,
-      check_out: checkOut,
-    });
-    await saveGuestConsent({
-      guest_id: guestId,
-      property_id: propertyId,
-      plan_your_stay_enabled: anyConsentEnabled,
-      selected_amenities: anyConsentEnabled ? selectedAmenityList : [],
-    });
-    setShowLandingConsent(false);
-    setView("booking");
-  };
-
   if (view === "landing") {
     return (
       <div className="bonvoy-page enterprise-bonvoy-page marriott-web-page">
@@ -410,54 +379,17 @@ export default function BusyAnalyticsDashboard() {
           <nav className="bonvoy-main-nav" aria-label="Marriott Bonvoy navigation">
             <span>Book</span><span>Offers</span><span>Brands</span><span>Credit Cards</span><span>Marriott Bonvoy</span><span>Meetings &amp; Events</span>
           </nav>
-          <div className="bonvoy-user-nav"><span>Help</span><span>English</span><span>Trips</span><strong>Srikar reddy</strong></div>
+          <div className="bonvoy-user-nav"><span>Help</span><span>English</span><span>Trips</span><strong>{DISPLAY_USER_NAME}</strong></div>
         </header>
         <nav className="bonvoy-tabs" aria-label="Account sections">
           {["Overview", "Activity", "Trips", "Favorites", "Promotions", "Profile"].map((tab) => (
             <button key={tab} className={tab === "Trips" ? "active" : ""}>{tab}</button>
           ))}
         </nav>
-        {showLandingConsent && (
-          <div className="bonvoy-consent-backdrop" role="dialog" aria-modal="true">
-            <article className="bonvoy-consent-sheet">
-              <button className="bonvoy-consent-close" aria-label="Close" onClick={() => setShowLandingConsent(false)}>×</button>
-              <div className="bonvoy-consent-title-row">
-                <span className="bonvoy-consent-shield">♢</span>
-                <div>
-                  <h2>Enhance Your Stay</h2>
-                  <p>Choose what to enable before checking in</p>
-                </div>
-              </div>
-              <div className="bonvoy-consent-copy">
-                Your data is used only to improve your in-property experience and is never shared with third parties. You can change these preferences at any time.
-              </div>
-              <div className="bonvoy-consent-options">
-                <label>
-                  <span className="option-icon">≋</span>
-                  <span><strong>Live Amenity Availability</strong><small>See real-time busy times for the pool, gym, spa, and dining.</small></span>
-                  <input type="checkbox" checked={consentOptions.liveAvailability} onChange={() => toggleConsentOption("liveAvailability")} />
-                </label>
-                <label>
-                  <span className="option-icon">✧</span>
-                  <span><strong>Personalized Recommendations</strong><small>Suggestions tailored to your preferences and past stays.</small></span>
-                  <input type="checkbox" checked={consentOptions.personalizedRecommendations} onChange={() => toggleConsentOption("personalizedRecommendations")} />
-                </label>
-                <label>
-                  <span className="option-icon">♧</span>
-                  <span><strong>Availability Alerts</strong><small>Push notifications when your preferred amenities are quiet.</small></span>
-                  <input type="checkbox" checked={consentOptions.availabilityAlerts} onChange={() => toggleConsentOption("availabilityAlerts")} />
-                </label>
-              </div>
-              <button className="bonvoy-consent-primary" onClick={completeLandingCheckIn}>
-                {anyConsentEnabled ? "Check In and Enhance Stay" : "Check In Without Recommendations"}
-              </button>
-              <button className="bonvoy-consent-skip" onClick={completeLandingCheckIn}>Skip for now</button>
-            </article>
-          </div>
-        )}
+
         <main className="bonvoy-content">
           <section className="member-card">
-            <div className="member-greeting">Hi, Srikar reddy</div>
+            <div className="member-greeting">Hi, {DISPLAY_USER_NAME}</div>
             <div className="member-stats">
               <div><span>Member Since May 2023</span><strong>Member</strong><small>View Benefits &gt;</small></div>
               <div><span>7 Nights To Silver Elite</span><strong>3 Nights</strong><small>Nights Detail &gt;</small></div>
@@ -470,7 +402,7 @@ export default function BusyAnalyticsDashboard() {
           </section>
           <section className="upcoming-trip-card">
             <div><span className="eyebrow">Upcoming Trip</span><h2>{tripPropertyName}</h2><p>Anaheim, California · {checkIn} - {checkOut}</p></div>
-            <button onClick={() => setShowLandingConsent(true)}>Check In</button>
+            <button onClick={() => setView("booking")}>Check In</button>
           </section>
         </main>
       </div>
