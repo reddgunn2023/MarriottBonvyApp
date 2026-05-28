@@ -185,7 +185,7 @@ export default function BusyAnalyticsDashboard() {
 
   const selectedAmenityList = useMemo(() => (amenity ? [amenity] : []), [amenity]);
   const analyticsEntries = Object.entries(analyticsByAmenity);
-  const chartDataFor = (slots) => {
+  const chartDataFor = useCallback((slots) => {
     const buckets = new Map();
     slots
       .filter((slot) => slot.date === selectedAnalyticsDate)
@@ -235,7 +235,7 @@ export default function BusyAnalyticsDashboard() {
         },
       };
     });
-  };
+  }, [selectedAnalyticsDate]);
 
   const hydrateActionStates = (schedule) => {
     setActionStates((current) => {
@@ -277,6 +277,9 @@ export default function BusyAnalyticsDashboard() {
       for (const item of amenitiesToLoad) {
         const analyticsData = await fetchBusyAnalytics(propertyId, item, checkIn, checkOut);
         setAnalyticsByAmenity({ [item]: analyticsData.slots || [] });
+        if (analyticsData.slots?.length) {
+          setSelectedSlotsByAmenity({ [item]: chartDataFor(analyticsData.slots)[0].slot });
+        }
       }
       await loadSchedule();
     } catch (err) {
@@ -285,7 +288,7 @@ export default function BusyAnalyticsDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [propertyId, selectedAmenityList, checkIn, checkOut, loadSchedule]);
+  }, [propertyId, selectedAmenityList, checkIn, checkOut, loadSchedule, chartDataFor]);
 
   const loadAnalyticsForAmenity = async (item) => {
     if (!item) return;
@@ -297,6 +300,9 @@ export default function BusyAnalyticsDashboard() {
     try {
       const analyticsData = await fetchBusyAnalytics(propertyId, item, checkIn, checkOut);
       setAnalyticsByAmenity({ [item]: analyticsData.slots || [] });
+      if (analyticsData.slots?.length) {
+        setSelectedSlotsByAmenity({ [item]: chartDataFor(analyticsData.slots)[0].slot });
+      }
       await loadSchedule();
     } catch (err) {
       console.error(err);
@@ -584,9 +590,7 @@ export default function BusyAnalyticsDashboard() {
                 })}
               </div>
               <p className="featured-onsite-help">Select an available onsite amenity or service to view its analytics below.</p>
-            </section>
-
-        <>
+              <div className="featured-analytics-canvas">
             {loading && (
               <section className="enterprise-card analytics-loading-state">
                 <strong>Loading analytics...</strong>
@@ -606,7 +610,7 @@ export default function BusyAnalyticsDashboard() {
                 <div className="analytics-heading"><div><span className="eyebrow">Stay Range Metrics</span><h2>{amenityName}</h2><p>Hourly busy and demand metrics for the selected date are shown below as an onsite amenities analytics add-on.</p></div></div>
                 <div className="enterprise-chart-frame">
                   <BarChart
-                    width={Math.max(1400, chartDataFor(rows).length * 42)}
+                    width={Math.max(720, chartDataFor(rows).length * 72)}
                     height={380}
                     data={chartDataFor(rows)}
                     margin={{ top: 18, right: 24, left: 8, bottom: 96 }}
@@ -629,14 +633,20 @@ export default function BusyAnalyticsDashboard() {
                     />
                     <YAxis domain={[0, 1]} />
                     <Tooltip
-                      formatter={(value, name) => [typeof value === "number" ? value.toFixed(2) : value, name]}
+                      formatter={(value, name) => [typeof value === "number" ? scoreLevel(value) : value, name]}
                       labelFormatter={(_label, payload) => {
                         const slot = payload?.[0]?.payload?.slot;
                         return slot ? `${slot.date} · ${formatTimeSlot(slot.time_slot)}` : _label;
                       }}
                     />
-                    <Bar dataKey="statusScore" name="Slot Status" cursor="pointer" isAnimationActive={false} onClick={(data) => data?.slot && setSelectedSlotsByAmenity((current) => ({ ...current, [amenityName]: data.slot }))}>
-                      {chartDataFor(rows).map((entry, index) => <Cell key={`${entry.date}-${entry.label}-${index}`} fill={statusColor(entry)} />)}
+                    <Bar dataKey="statusScore" name="Busy Status" cursor="pointer" barSize={36} maxBarSize={36} isAnimationActive={false} onClick={(data) => data?.slot && setSelectedSlotsByAmenity((current) => ({ ...current, [amenityName]: data.slot }))}>
+                      {chartDataFor(rows).map((entry, index) => (
+                        <Cell
+                          key={`${entry.date}-${entry.label}-${index}`}
+                          fill={statusColor(entry)}
+                          onClick={() => setSelectedSlotsByAmenity((current) => ({ ...current, [amenityName]: entry.slot }))}
+                        />
+                      ))}
                     </Bar>
                   </BarChart>
                 </div>
@@ -653,18 +663,13 @@ export default function BusyAnalyticsDashboard() {
                       <h3>{selectedSlotsByAmenity[amenityName].time_slot}</h3>
                       <p>{selectedSlotsByAmenity[amenityName].date} · {amenityName}</p>
                     </div>
-                    <dl>
-                      <div><dt>Busy</dt><dd>{scoreLevel(selectedSlotsByAmenity[amenityName].busy_score)}</dd></div>
-                      <div><dt>Demand</dt><dd>{scoreLevel(selectedSlotsByAmenity[amenityName].demand_score)}</dd></div>
-                      <div><dt>Forecast</dt><dd>{scoreLevel(selectedSlotsByAmenity[amenityName].future_busy)}</dd></div>
-                      <div><dt>Season</dt><dd>{selectedSlotsByAmenity[amenityName].season || "spring"}</dd></div>
+                    <div className="expected-busy-card">
+                      <span>Expected Busy</span>
+                      <strong>{scoreLevel(selectedSlotsByAmenity[amenityName].future_busy) === "High" ? "Very busy" : scoreLevel(selectedSlotsByAmenity[amenityName].future_busy) === "Moderate" ? "Moderate busy" : "Not busy"}</strong>
                       {selectedSlotsByAmenity[amenityName].seasonal_event && (
-                        <div><dt>Seasonal Event</dt><dd>{selectedSlotsByAmenity[amenityName].seasonal_event}</dd></div>
+                        <small>{selectedSlotsByAmenity[amenityName].seasonal_event}</small>
                       )}
-                      <div><dt>Weather</dt><dd>{selectedSlotsByAmenity[amenityName].weather_condition || "Clear"}</dd></div>
-                      <div><dt>Traffic</dt><dd>{selectedSlotsByAmenity[amenityName].traffic_condition || "Light"}</dd></div>
-                      <div><dt>Availability</dt><dd>{selectedSlotsByAmenity[amenityName].weather_blocked ? "Weather Blocked" : selectedSlotsByAmenity[amenityName].service_type === "open_window" ? "Open Window" : selectedSlotsByAmenity[amenityName].available <= 0 ? "Full" : `${selectedSlotsByAmenity[amenityName].available} open`}</dd></div>
-                    </dl>
+                    </div>
                     <div className="slot-detail-actions">{slotAction(selectedSlotsByAmenity[amenityName])}</div>
                     {eventMessage && !eventMessage.startsWith("Preparing") && (
                       <p className="slot-event-message">{eventMessage}</p>
@@ -685,8 +690,8 @@ export default function BusyAnalyticsDashboard() {
                 {eventMessage === "Failed to load analytics" && <p className="event-msg enterprise-event-msg">{eventMessage}</p>}
               </section>
             ))}
-          </>
-
+              </div>
+            </section>
 
         <section className="marriott-content-band accommodations-band" id="accommodations">
           <div className="content-band-copy">

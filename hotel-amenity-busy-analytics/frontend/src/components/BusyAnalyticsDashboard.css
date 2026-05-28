@@ -3502,3 +3502,45 @@ input {
   margin-top: 16px;
   background: transparent;
 }
+
+/* Embedded analytics canvas inside Featured Amenities */
+.featured-analytics-canvas {
+  margin-top: 32px;
+  padding-top: 28px;
+  border-top: 1px solid #e5dfd7;
+}
+
+.featured-analytics-canvas .analytics-workspace {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+.expected-busy-card {
+  display: grid;
+  gap: 8px;
+  padding: 18px 20px;
+  border: 1px solid #e3ddd5;
+  border-radius: 14px;
+  background: #f7f3ee;
+}
+
+.expected-busy-card span {
+  color: #8b6f47;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.expected-busy-card strong {
+  color: #24201c;
+  font-size: 1.45rem;
+}
+
+.expected-busy-card small {
+  color: #7a6d60;
+  font-weight: 800;
+}
