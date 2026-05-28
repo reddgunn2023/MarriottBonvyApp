@@ -549,25 +549,7 @@ export default function BusyAnalyticsDashboard() {
               </div>
               <div className="featured-onsite-title-row">
                 <h3>{featuredTitle}</h3>
-                <div className="featured-onsite-title-actions">
-                  <span>⊙ included amenities (3)</span>
-                  {analyticsEntries.length > 0 && (
-                    <label className="stay-date-select">
-                      <span>Stay Date</span>
-                      <select
-                        value={selectedAnalyticsDate}
-                        onChange={(event) => {
-                          setSelectedAnalyticsDate(event.target.value);
-                          setSelectedSlotsByAmenity({});
-                        }}
-                      >
-                        {analyticsDateOptions.map((dateOption) => (
-                          <option key={dateOption} value={dateOption}>{dateOption}</option>
-                        ))}
-                      </select>
-                    </label>
-                  )}
-                </div>
+                <span>⊙ included amenities (3)</span>
               </div>
               <div className="featured-onsite-grid">
                 {featuredItems.map((item) => {
@@ -609,11 +591,25 @@ export default function BusyAnalyticsDashboard() {
               <section className="enterprise-card analytics-workspace" key={amenityName}>
                 <div className="analytics-heading">
                   <div>
-                    <span className="eyebrow">Stay Range Metrics</span>
+                    <span className="eyebrow">Stay Date Metrics</span>
                     <h2>{amenityName}</h2>
                     <p>The hourly busy and demand metrics are displayed for the chosen stay date.</p>
                     <small className="graph-open-hours">{formatOpenHours(selectedAmenityOpenHours)}</small>
                   </div>
+                  <label className="stay-date-metric-select">
+                    <span>Stay Date</span>
+                    <select
+                      value={selectedAnalyticsDate}
+                      onChange={(event) => {
+                        setSelectedAnalyticsDate(event.target.value);
+                        setSelectedSlotsByAmenity({});
+                      }}
+                    >
+                      {analyticsDateOptions.map((dateOption) => (
+                        <option key={dateOption} value={dateOption}>{dateOption}</option>
+                      ))}
+                    </select>
+                  </label>
                 </div>
                 <div className="enterprise-chart-frame">
                   <BarChart
