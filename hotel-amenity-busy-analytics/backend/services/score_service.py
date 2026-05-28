@@ -3,6 +3,7 @@
 from datetime import date
 
 from data.mock_slots import get_mock_historical_slots
+from services.prediction_service import predict_future_busy
 
 _HISTORICAL_CACHE: dict[tuple[str, str], list[dict]] = {}
 
@@ -87,7 +88,11 @@ def _historical_match_score(slot: dict, historical: dict) -> int:
 
 
 def calculate_future_busy_score(slot: dict) -> float:
-    """Forecast from 90 days of historical mock data, with weighted fallback."""
+    """Forecast with cached LightGBM model, falling back to historical average."""
+    lightgbm_prediction = predict_future_busy(slot)
+    if lightgbm_prediction is not None:
+        return lightgbm_prediction
+
     historical_slots = [
         historical for historical in _historical_slots_for(slot)
         if historical.get("amenityId") == slot.get("amenityId")

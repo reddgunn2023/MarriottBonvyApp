@@ -1,68 +1,37 @@
-"""LightGBM-backed future busy prediction for amenity slots.
+"""LightGBM-backed future busy prediction for mock amenity slots.
 
-The model trains from the canonical 60-day JSON when available locally. Otherwise it
-uses the in-memory historical fixture so cloud agents and demos remain runnable.
-Features include busy, demand, weather, traffic, time of day, day of week, and
-amenity identity.
+The active app still uses mock data at runtime. This module trains one cached
+LightGBM model from 90+ days of mock historical slots and predicts futureBusy
+for requested slots. If LightGBM is unavailable or prediction fails, callers can
+fall back to deterministic scoring.
 """
 
-import csv
-import json
-import os
-from pathlib import Path
+from __future__ import annotations
 
-from data.mock_slots import TIME_SLOTS, get_historical_busy_data
+from datetime import date
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-CANONICAL_DATASET = REPO_ROOT / "hotel-amenity-busy-analytics/backend/data/hotel_amenity_large_dataset_60days_weather_traffic.canonical.json"
-SOURCE_DATASET_CANDIDATES = [
-    CANONICAL_DATASET
-]
+from data.mock_slots import get_mock_historical_slots
 
-
-def _source_dataset() -> Path:
-    override = os.environ.get("HOTEL_AMENITY_DATASET_PATH")
-    if override:
-        return Path(override)
-    for candidate in SOURCE_DATASET_CANDIDATES:
-        if candidate.exists():
-            return candidate
-    return SOURCE_DATASET_CANDIDATES[0]
-
-
-SOURCE_DATASET = _source_dataset()
 _MODEL = None
 _MODEL_READY = False
-_SOURCE_ROWS_CACHE: list[dict] | None = None
+_MODEL_ERROR: str | None = None
+_TRAINING_ROW_COUNT = 0
 
 
-def _amenity_code(amenity: str) -> int:
-    """Stable lightweight encoding for model features."""
-    return sum(ord(ch) for ch in amenity) % 97
+def _amenity_code(amenity_id: str) -> int:
+    return sum(ord(char) for char in (amenity_id or "")) % 251
 
 
-def _norm_key(key: str) -> str:
-    return key.strip().lower().replace(" ", "_").replace("-", "_")
+def _category_code(category: str) -> int:
+    return sum(ord(char) for char in (category or "")) % 127
 
 
-def _get(row: dict, *aliases: str, default: str = "") -> str:
-    normalized = {_norm_key(k): v for k, v in row.items()}
-    for alias in aliases:
-        value = normalized.get(_norm_key(alias))
-        if value not in (None, ""):
-            return str(value).strip()
-    return default
-
-
-def _safe_float(value: str, default: float = 0.0) -> float:
-    try:
-        return float(str(value).strip())
-    except (TypeError, ValueError):
-        return default
+def _season_code(season: str) -> int:
+    return {"winter": 0, "spring": 1, "summer": 2, "fall": 3}.get((season or "").lower(), 1)
 
 
 def _weather_score(condition: str) -> float:
-    value = condition.strip().lower()
+    value = (condition or "").lower()
     if value in {"severe", "storm", "hurricane", "extreme"}:
         return 1.0
     if value in {"rain", "heat", "snow", "wind", "hot"}:
@@ -73,7 +42,7 @@ def _weather_score(condition: str) -> float:
 
 
 def _traffic_score(condition: str) -> float:
-    value = condition.strip().lower()
+    value = (condition or "").lower()
     if value in {"severe", "heavy", "high", "congested"}:
         return 1.0
     if value in {"moderate", "medium"}:
@@ -83,207 +52,134 @@ def _traffic_score(condition: str) -> float:
     return 0.25
 
 
-def _time_index(time_slot: str) -> int:
-    try:
-        return TIME_SLOTS.index(time_slot)
-    except ValueError:
-        return 0
+def _busy_score(slot: dict) -> float:
+    capacity = max(slot.get("capacity", 1), 1)
+    return min(slot.get("booked", 0) / capacity, 1.0)
 
 
-def _day_of_week(date_str: str) -> int:
-    try:
-        from datetime import date
-
-        return date.fromisoformat(date_str).weekday()
-    except (TypeError, ValueError):
-        return 0
+def _demand_score(slot: dict) -> float:
+    capacity = max(slot.get("capacity", 1), 1)
+    return min(_busy_score(slot) + (slot.get("waitlist", 0) / capacity) * 0.5, 1.5)
 
 
-def _forecast_target(busy: float, demand: float, weather: float, traffic: float) -> float:
+def _target(slot: dict) -> float:
+    if slot.get("weatherBlocked"):
+        return 1.0
+    busy = _busy_score(slot)
+    demand = _demand_score(slot)
+    weather = _weather_score(slot.get("weatherCondition", "clear"))
+    traffic = _traffic_score(slot.get("trafficCondition", "light"))
     return min(1.0, busy * 0.52 + min(demand, 1.5) * 0.24 + weather * 0.12 + traffic * 0.12)
 
 
-def _features_from_values(
-    busy: float,
-    demand: float,
-    weather: float,
-    traffic: float,
-    time_index: int,
-    day_of_week: int,
-    amenity: str,
-) -> list[float]:
+def _features(slot: dict) -> list[float]:
+    slot_date = date.fromisoformat(slot["date"])
+    capacity = max(slot.get("capacity", 1), 1)
     return [
-        float(busy),
-        float(demand),
-        float(weather),
-        float(traffic),
-        float(time_index),
-        float(day_of_week),
-        float(_amenity_code(amenity)),
+        float(slot.get("timeIndex", 0)),
+        float(slot_date.weekday()),
+        1.0 if slot_date.weekday() >= 5 else 0.0,
+        float(_season_code(slot.get("season", "spring"))),
+        float(_amenity_code(slot.get("amenityId", ""))),
+        float(_category_code(slot.get("category", ""))),
+        1.0 if slot.get("serviceType") == "open_window" else 0.0,
+        float(capacity),
+        float(slot.get("booked", 0)),
+        float(slot.get("available", 0)),
+        float(slot.get("waitlist", 0)),
+        float(_busy_score(slot)),
+        float(_demand_score(slot)),
+        float(_weather_score(slot.get("weatherCondition", "clear"))),
+        float(slot.get("weatherSeverity", 0.0)),
+        1.0 if slot.get("weatherBlocked") else 0.0,
+        1.0 if slot.get("indoorWeatherBoost") else 0.0,
+        float(_traffic_score(slot.get("trafficCondition", "light"))),
     ]
 
 
-def _features(slot: dict) -> list[float]:
-    capacity = max(slot.get("capacity", 1), 1)
-    busy = min(slot.get("booked", 0) / capacity, 1.0)
-    demand = min(busy + (slot.get("waitlist", 0) / capacity) * 0.5, 1.5)
-    return _features_from_values(
-        busy,
-        demand,
-        _weather_score(slot.get("weatherCondition", "clear")),
-        _traffic_score(slot.get("trafficCondition", "light")),
-        slot.get("timeIndex", _time_index(slot.get("timeSlot", ""))),
-        _day_of_week(slot.get("date", "")),
-        slot.get("amenity", ""),
-    )
+def _training_slots(property_id: str = "prop-001") -> list[dict]:
+    # Anchor in late summer so the training set includes spring/summer and July
+    # weather scenarios used by the mock experience.
+    return get_mock_historical_slots(property_id, days=120, anchor_date=date(2026, 8, 15))
 
 
-def _source_rows() -> list[dict]:
-    global _SOURCE_ROWS_CACHE
-    if _SOURCE_ROWS_CACHE is not None:
-        return _SOURCE_ROWS_CACHE
-    if not SOURCE_DATASET.exists():
-        _SOURCE_ROWS_CACHE = []
-        return _SOURCE_ROWS_CACHE
-    if SOURCE_DATASET.suffix.lower() == ".json":
-        with SOURCE_DATASET.open() as handle:
-            payload = json.load(handle)
-        _SOURCE_ROWS_CACHE = payload.get("records", [])
-        return _SOURCE_ROWS_CACHE
-    if SOURCE_DATASET.suffix.lower() in {".xlsx", ".xslx"}:
-        from openpyxl import load_workbook
-
-        workbook = load_workbook(SOURCE_DATASET, read_only=True, data_only=True)
-        sheet = workbook.active
-        iterator = sheet.iter_rows(values_only=True)
-        headers = [str(value) if value is not None else "" for value in next(iterator)]
-        _SOURCE_ROWS_CACHE = [dict(zip(headers, row)) for row in iterator]
-        return _SOURCE_ROWS_CACHE
-    with SOURCE_DATASET.open(newline="") as handle:
-        _SOURCE_ROWS_CACHE = list(csv.DictReader(handle))
-        return _SOURCE_ROWS_CACHE
-
-
-def _external_training_rows() -> list[tuple[list[float], float]]:
-    rows = []
-    for row in _source_rows():
-        capacity = max(_safe_float(_get(row, "totalCapacity", "capacity", "max_capacity", "total_capacity", default="1"), 1), 1)
-        booked = _safe_float(_get(row, "bookedCount", "booked", "reserved", "reservations", "current_occupancy", "occupied", default="0"), 0)
-        waitlist = _safe_float(_get(row, "waitlistCount", "waitlist", "waiting", "waiting_count", "waiting_line", default="0"), 0)
-        busy = _safe_float(_get(row, "busyScore", "busy_score", default=""), min(booked / capacity, 1.0))
-        demand = _safe_float(_get(row, "demandScore", "demand_score", default=""), min(busy + (waitlist / capacity) * 0.5, 1.5))
-        weather = _safe_float(
-            _get(row, "weatherSeverityScore", "weather_score", default=""),
-            _weather_score(_get(row, "weatherCondition", "weather_condition", "weather", default="clear")),
-        )
-        traffic = _safe_float(
-            _get(row, "trafficScore", "traffic_score", default=""),
-            _traffic_score(_get(row, "trafficLevel", "traffic_condition", "traffic", default="light")),
-        )
-        date_value = _get(row, "date", "slot_date", "stay_date", default="")
-        time_slot = _get(row, "time_slot", "timeSlot", "time", "slot", "period")
-        if not time_slot:
-            start = _get(row, "timeSlotStart", "time_slot_start", default=TIME_SLOTS[0].split("-")[0])
-            end = _get(row, "timeSlotEnd", "time_slot_end", default=TIME_SLOTS[0].split("-")[1])
-            time_slot = f"{start}-{end}"
-        amenity = _get(row, "amenityType", "amenity_type", "amenity_name", "amenity", "serviceName", "service_name", default="")
-        target = _safe_float(
-            _get(row, "future_busy", "futureBusy", "forecast_score", "predicted_busy", default=""),
-            _forecast_target(busy, demand, weather, traffic),
-        )
-        rows.append(
-            (
-                _features_from_values(
-                    busy,
-                    demand,
-                    weather,
-                    traffic,
-                    _time_index(time_slot),
-                    _day_of_week(date_value),
-                    amenity,
-                ),
-                min(max(target, 0.0), 1.0),
-            )
-        )
-    return rows
-
-
-def _fallback_training_rows() -> list[tuple[list[float], float]]:
-    rows = []
-    for row in get_historical_busy_data():
-        busy = row["busy_score"]
-        demand = min(busy + max(busy - 0.85, 0.0) * 0.5, 1.5)
-        weather = 0.65 if row["day_of_week"] >= 5 else 0.1
-        traffic = 1.0 if row["time_index"] in {1, 5} and row["day_of_week"] < 5 else 0.25
-        rows.append(
-            (
-                _features_from_values(
-                    busy,
-                    demand,
-                    weather,
-                    traffic,
-                    row["time_index"],
-                    row["day_of_week"],
-                    row["amenity"],
-                ),
-                _forecast_target(busy, demand, weather, traffic),
-            )
-        )
-    return rows
-
-
-def _train_model():
-    """Train a tiny LightGBM regressor from source CSV or fallback fixtures."""
-    global _MODEL, _MODEL_READY
-    if _MODEL_READY:
+def train_lightgbm_model(force: bool = False):
+    """Train/cache the LightGBM model and return the model or None."""
+    global _MODEL, _MODEL_READY, _MODEL_ERROR, _TRAINING_ROW_COUNT
+    if _MODEL_READY and not force:
         return _MODEL
 
     try:
         import lightgbm as lgb
         import numpy as np
-    except ImportError:
-        _MODEL_READY = True
-        _MODEL = None
-        return None
 
-    training_rows = _external_training_rows() or _fallback_training_rows()
-    x_train = [features for features, _target in training_rows]
-    y_train = [target for _features, target in training_rows]
-    dataset = lgb.Dataset(np.array(x_train, dtype=float), label=np.array(y_train, dtype=float))
-    model = lgb.train(
-        {
-            "objective": "regression",
-            "learning_rate": 0.08,
-            "num_leaves": 16,
-            "min_data_in_leaf": 1,
-            "verbose": -1,
-        },
-        dataset,
-        num_boost_round=50,
-    )
-    _MODEL = model
-    _MODEL_READY = True
+        slots = _training_slots()
+        x_train = [_features(slot) for slot in slots]
+        y_train = [_target(slot) for slot in slots]
+        dataset = lgb.Dataset(np.array(x_train, dtype=float), label=np.array(y_train, dtype=float))
+        _MODEL = lgb.train(
+            {
+                "objective": "regression",
+                "learning_rate": 0.06,
+                "num_leaves": 31,
+                "min_data_in_leaf": 5,
+                "feature_pre_filter": False,
+                "verbose": -1,
+            },
+            dataset,
+            num_boost_round=80,
+        )
+        _TRAINING_ROW_COUNT = len(slots)
+        _MODEL_ERROR = None
+    except Exception as exc:  # pragma: no cover - defensive fallback path
+        _MODEL = None
+        _MODEL_ERROR = str(exc)
+        _TRAINING_ROW_COUNT = 0
+    finally:
+        _MODEL_READY = True
     return _MODEL
 
 
-def predict_future_busy(slot: dict) -> float:
-    """Predict future busy score using LightGBM, falling back to a score formula."""
-    model = _train_model()
+def predict_future_busy(slot: dict) -> float | None:
+    """Return LightGBM futureBusy prediction, or None if model unavailable."""
+    model = train_lightgbm_model()
     if model is None:
-        capacity = max(slot.get("capacity", 1), 1)
-        busy = min(slot.get("booked", 0) / capacity, 1.0)
-        demand = min(busy + (slot.get("waitlist", 0) / capacity) * 0.5, 1.5)
-        return round(
-            _forecast_target(
-                busy,
-                demand,
-                _weather_score(slot.get("weatherCondition", "clear")),
-                _traffic_score(slot.get("trafficCondition", "light")),
-            ),
-            2,
-        )
+        return None
+    try:
+        import numpy as np
 
-    import numpy as np
+        prediction = float(model.predict(np.array([_features(slot)], dtype=float))[0])
+        return round(max(0.0, min(prediction, 1.0)), 2)
+    except Exception as exc:  # pragma: no cover - defensive fallback path
+        global _MODEL_ERROR
+        _MODEL_ERROR = str(exc)
+        return None
 
-    prediction = float(model.predict(np.array([_features(slot)], dtype=float))[0])
-    return round(max(0.0, min(prediction, 1.0)), 2)
+
+def prediction_status() -> dict:
+    return {
+        "model_ready": _MODEL_READY,
+        "model_loaded": _MODEL is not None,
+        "training_rows": _TRAINING_ROW_COUNT,
+        "model_error": _MODEL_ERROR,
+        "features": [
+            "timeIndex",
+            "dayOfWeek",
+            "isWeekend",
+            "season",
+            "amenityId",
+            "category",
+            "serviceType",
+            "capacity",
+            "booked",
+            "available",
+            "waitlist",
+            "busyScore",
+            "demandScore",
+            "weatherCondition",
+            "weatherSeverity",
+            "weatherBlocked",
+            "indoorWeatherBoost",
+            "trafficCondition",
+        ],
+    }

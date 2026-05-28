@@ -30,6 +30,7 @@ from services.booking_service import (
 )
 from services.csv_dataset_service import canonical_property_id, dataset_properties, dataset_property_amenities, dataset_property_date_range, recent_events, seed_csv_datasets
 from services.guest_service import check_in_guest, get_guest, save_guest_consent
+from services.prediction_service import prediction_status, train_lightgbm_model
 from services.analytics_service import get_busy_analytics, get_recommendations
 
 logging.basicConfig(level=logging.INFO)
@@ -46,6 +47,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.on_event("startup")
+def warm_prediction_model():
+    """Train LightGBM once so prediction is ready for analytics requests."""
+    train_lightgbm_model()
 
 
 @app.get("/")
@@ -124,6 +131,19 @@ def guest_consent(req: ConsentRequest):
 @app.get("/guests/{guest_id}/schedule")
 def guest_schedule(guest_id: str):
     return {"schedule": get_guest_schedule(guest_id)}
+
+
+@app.get("/amenities/prediction/status")
+def get_prediction_status():
+    """Return cached LightGBM model status."""
+    return prediction_status()
+
+
+@app.post("/amenities/prediction/train")
+def train_prediction_model():
+    """Train or retrain the cached LightGBM model."""
+    train_lightgbm_model(force=True)
+    return prediction_status()
 
 
 @app.get("/amenities/availability")
