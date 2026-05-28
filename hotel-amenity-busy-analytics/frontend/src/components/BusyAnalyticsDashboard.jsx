@@ -183,6 +183,16 @@ export default function BusyAnalyticsDashboard() {
         : "Property Amenities On-Site";
 
   const selectedAmenityList = useMemo(() => (amenity ? [amenity] : []), [amenity]);
+  const analyticsDateOptions = useMemo(() => {
+    const dates = [];
+    const cursor = new Date(`${checkIn}T00:00:00`);
+    const end = new Date(`${checkOut}T00:00:00`);
+    while (cursor < end) {
+      dates.push(cursor.toISOString().slice(0, 10));
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    return dates;
+  }, [checkIn, checkOut]);
   const analyticsEntries = Object.entries(analyticsByAmenity);
   const chartDataFor = useCallback((slots) => {
     const buckets = new Map();
@@ -528,23 +538,6 @@ export default function BusyAnalyticsDashboard() {
                 })}
               </div>
               <p className="featured-onsite-help">Select an available onsite amenity or service to view its analytics below.</p>
-              <div className="featured-analytics-controls">
-                <label className="amenity-selector-control analytics-date-control">
-                  <span>Analytics Date</span>
-                  <input
-                    type="date"
-                    value={selectedAnalyticsDate}
-                    min={checkIn}
-                    max={checkOut}
-                    onChange={(event) => {
-                      setSelectedAnalyticsDate(event.target.value);
-                      setAnalyticsByAmenity({});
-                      setSelectedSlotsByAmenity({});
-                    }}
-                  />
-                </label>
-                <span className="analytics-date-hint">Choose a date within your stay to update onsite amenity analytics.</span>
-              </div>
               <div className="featured-analytics-canvas">
             {loading && (
               <section className="enterprise-card analytics-loading-state">
@@ -562,7 +555,27 @@ export default function BusyAnalyticsDashboard() {
 
             {analyticsEntries.length > 0 && analyticsEntries.map(([amenityName, rows]) => (
               <section className="enterprise-card analytics-workspace" key={amenityName}>
-                <div className="analytics-heading"><div><span className="eyebrow">Stay Range Metrics</span><h2>{amenityName}</h2><p>Hourly busy and demand metrics for the selected date are shown below as an onsite amenities analytics add-on.</p></div></div>
+                <div className="analytics-heading">
+                  <div>
+                    <span className="eyebrow">Stay Range Metrics</span>
+                    <h2>{amenityName}</h2>
+                    <p>Hourly busy and demand metrics are shown for the selected analytics date.</p>
+                  </div>
+                  <label className="graph-date-select">
+                    <span>Analytics Date</span>
+                    <select
+                      value={selectedAnalyticsDate}
+                      onChange={(event) => {
+                        setSelectedAnalyticsDate(event.target.value);
+                        setSelectedSlotsByAmenity({});
+                      }}
+                    >
+                      {analyticsDateOptions.map((dateOption) => (
+                        <option key={dateOption} value={dateOption}>{dateOption}</option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
                 <div className="enterprise-chart-frame">
                   <BarChart
                     width={Math.max(680, chartDataFor(rows).length * 58)}
