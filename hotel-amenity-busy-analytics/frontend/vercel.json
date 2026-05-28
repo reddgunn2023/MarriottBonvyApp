@@ -1,5 +1,5 @@
 {
-  "installCommand": "python3 -m pip install --disable-pip-version-check -r requirements.txt && npm install --include=dev",
+  "installCommand": "npm install --include=dev",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": "vite",
