@@ -1,0 +1,6 @@
+{
+  "installCommand": "npm install --include=dev --prefix hotel-amenity-busy-analytics/frontend",
+  "buildCommand": "npm run build --prefix hotel-amenity-busy-analytics/frontend",
+  "outputDirectory": "hotel-amenity-busy-analytics/frontend/dist",
+  "framework": "vite"
+}
