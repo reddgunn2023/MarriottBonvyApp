@@ -1,6 +1,16 @@
 {
-  "installCommand": "npm install --include=dev",
+  "installCommand": "python3 -m pip install --disable-pip-version-check -r requirements.txt && npm install --include=dev",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "framework": "vite"
+  "framework": "vite",
+  "rewrites": [
+    {
+      "source": "/amenities/:path*",
+      "destination": "/api/index.py"
+    },
+    {
+      "source": "/guests/:path*",
+      "destination": "/api/index.py"
+    }
+  ]
 }

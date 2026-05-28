@@ -1,6 +1,16 @@
 {
-  "installCommand": "npm install --include=dev --prefix hotel-amenity-busy-analytics/frontend",
+  "installCommand": "python3 -m pip install --disable-pip-version-check -r requirements.txt && npm install --include=dev --prefix hotel-amenity-busy-analytics/frontend",
   "buildCommand": "npm run build --prefix hotel-amenity-busy-analytics/frontend",
   "outputDirectory": "hotel-amenity-busy-analytics/frontend/dist",
-  "framework": "vite"
+  "framework": "vite",
+  "rewrites": [
+    {
+      "source": "/amenities/:path*",
+      "destination": "/api/index.py"
+    },
+    {
+      "source": "/guests/:path*",
+      "destination": "/api/index.py"
+    }
+  ]
 }
