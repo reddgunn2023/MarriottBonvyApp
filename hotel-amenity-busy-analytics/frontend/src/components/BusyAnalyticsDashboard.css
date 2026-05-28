@@ -3258,6 +3258,42 @@ input {
   font-size: 0.95rem;
 }
 
+.featured-onsite-title-actions {
+  display: flex;
+  align-items: flex-end;
+  gap: 18px;
+  margin-left: auto;
+}
+
+.featured-onsite-title-actions > span {
+  padding-bottom: 8px;
+  white-space: nowrap;
+}
+
+.stay-date-select {
+  display: grid;
+  gap: 6px;
+  min-width: 150px;
+}
+
+.featured-onsite-title-row .stay-date-select span {
+  color: #8b6f47;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.stay-date-select select {
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid #d8d1c8;
+  border-radius: 10px;
+  background: #fff;
+  color: #24201c;
+  font-weight: 800;
+}
+
 .featured-onsite-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -3339,11 +3375,27 @@ input {
     align-items: flex-start;
     flex-direction: column;
   }
+
+  .featured-onsite-title-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    margin-left: 0;
+  }
 }
 
 @media (max-width: 620px) {
   .featured-onsite-grid {
     grid-template-columns: 1fr;
+  }
+
+  .featured-onsite-title-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .featured-onsite-title-actions > span {
+    padding-bottom: 0;
   }
 }
 
@@ -3648,87 +3700,10 @@ input {
   line-height: 1.4;
 }
 
-.graph-date-select {
-  display: grid;
-  gap: 6px;
-  min-width: 190px;
-}
-
-.graph-date-select span {
-  color: #8b6f47;
-  font-size: 0.72rem;
-  font-weight: 900;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.graph-date-select select {
-  min-height: 42px;
-  padding: 0 12px;
-  border: 1px solid #d8d1c8;
-  border-radius: 10px;
-  background: #fff;
-  color: #24201c;
-  font-weight: 800;
-}
-
-@media (max-width: 760px) {
-  .graph-date-select {
-    width: 100%;
-  }
-}
-
-
 .graph-open-hours {
   display: inline-block;
   margin-top: 6px;
   color: #6c625a;
   font-size: 0.86rem;
   font-weight: 800;
-}
-
-.featured-analytics-canvas .graph-date-select {
-  min-width: 132px;
-}
-
-.featured-analytics-canvas .graph-date-select select {
-  min-height: 34px;
-  padding: 0 8px;
-  font-size: 0.82rem;
-}
-
-.featured-analytics-canvas .graph-date-select span {
-  font-size: 0.62rem;
-}
-
-
-/* Screenshot-style graph date selector */
-.featured-analytics-canvas .graph-date-select {
-  min-width: 128px;
-  justify-self: end;
-  position: relative;
-}
-
-.featured-analytics-canvas .graph-date-select span {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 34px;
-  padding: 0 12px;
-  border: 2px solid #12356f;
-  background: #fff;
-  color: #d12c1f;
-  font-size: 0.72rem;
-  font-weight: 500;
-  letter-spacing: 0;
-  text-transform: none;
-}
-
-.featured-analytics-canvas .graph-date-select select {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  cursor: pointer;
 }
