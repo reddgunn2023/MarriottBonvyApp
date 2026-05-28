@@ -117,8 +117,16 @@ function formatTimeSlot(slot) {
   return slot.replace(/\b0(\d):/g, "$1:").replace(/:/g, ".");
 }
 
+function formatHourLabel(value) {
+  const hour = Number(value.split(":")[0]);
+  const suffix = hour >= 12 ? "PM" : "AM";
+  const displayHour = hour % 12 || 12;
+  return `${displayHour} ${suffix}`;
+}
+
 function formatStartHour(slot) {
-  return formatTimeSlot(slot).split("-")[0];
+  const start = slot.split("-")[0];
+  return formatHourLabel(start);
 }
 
 function formatOpenHours(hours) {
@@ -585,11 +593,11 @@ export default function BusyAnalyticsDashboard() {
                   <div>
                     <span className="eyebrow">Stay Range Metrics</span>
                     <h2>{amenityName}</h2>
-                    <p>Hourly busy and demand metrics are shown for the selected analytics date.</p>
+                    <p>The hourly busy and demand metrics are displayed for the chosen stay dates.</p>
                     <small className="graph-open-hours">{formatOpenHours(selectedAmenityOpenHours)}</small>
                   </div>
                   <label className="graph-date-select">
-                    <span>Analytics Date</span>
+                    <span>Date</span>
                     <select
                       value={selectedAnalyticsDate}
                       onChange={(event) => {
@@ -621,9 +629,9 @@ export default function BusyAnalyticsDashboard() {
                       dataKey="label"
                       interval={0}
                       minTickGap={0}
-                      angle={-55}
-                      textAnchor="end"
-                      height={52}
+                      angle={0}
+                      textAnchor="middle"
+                      height={36}
                       tick={{ fontSize: 11 }}
                     />
                     <YAxis domain={[0, 1]} />
