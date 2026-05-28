@@ -2888,3 +2888,148 @@ input {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Marriott overview content sections */
+.marriott-overview-hero,
+.marriott-welcome-section,
+.marriott-feature-grid,
+.marriott-location-strip {
+  max-width: 1180px;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.marriott-overview-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
+  gap: 18px;
+  margin-top: 28px;
+}
+
+.overview-photo-main,
+.overview-photo-stack > div {
+  position: relative;
+  overflow: hidden;
+  border-radius: 4px;
+  background:
+    linear-gradient(140deg, rgba(32, 29, 27, 0.12), rgba(32, 29, 27, 0.58)),
+    linear-gradient(135deg, #d7c8b6, #8ea8ad 45%, #403931);
+  color: #fff;
+}
+
+.overview-photo-main {
+  min-height: 360px;
+  padding: 32px;
+  display: grid;
+  align-content: end;
+}
+
+.overview-photo-main span,
+.overview-photo-stack span {
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.overview-photo-main strong {
+  max-width: 580px;
+  margin-top: 8px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  line-height: 1;
+}
+
+.overview-photo-stack {
+  display: grid;
+  gap: 18px;
+}
+
+.overview-photo-stack > div {
+  min-height: 171px;
+  padding: 22px;
+  display: grid;
+  align-content: end;
+}
+
+.marriott-welcome-section {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.8fr) minmax(320px, 1fr);
+  gap: 48px;
+  padding: 54px 0 36px;
+}
+
+.marriott-welcome-section h2 {
+  margin-top: 10px;
+  color: #2f2f2f;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2rem, 4vw, 3.25rem);
+  line-height: 1.06;
+}
+
+.marriott-welcome-section p {
+  color: #555;
+  font-size: 1.05rem;
+  line-height: 1.8;
+}
+
+.marriott-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.marriott-feature-grid article {
+  min-height: 190px;
+  padding: 24px;
+  border: 1px solid #e3ddd5;
+  background: #fff;
+}
+
+.marriott-feature-grid span {
+  color: #1f6f9f;
+  font-size: 1.6rem;
+}
+
+.marriott-feature-grid h3 {
+  margin: 18px 0 10px;
+  color: #2f2f2f;
+  font-size: 1.05rem;
+}
+
+.marriott-feature-grid p {
+  color: #666;
+  line-height: 1.55;
+}
+
+.marriott-location-strip {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 28px;
+  padding: 18px 22px;
+  border-top: 1px solid #d9d9d9;
+  border-bottom: 1px solid #d9d9d9;
+  color: #333;
+}
+
+.marriott-location-strip span {
+  color: #666;
+}
+
+@media (max-width: 900px) {
+  .marriott-overview-hero,
+  .marriott-welcome-section,
+  .marriott-feature-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .marriott-overview-hero,
+  .marriott-welcome-section,
+  .marriott-feature-grid,
+  .marriott-location-strip {
+    margin-right: 18px;
+    margin-left: 18px;
+  }
+}

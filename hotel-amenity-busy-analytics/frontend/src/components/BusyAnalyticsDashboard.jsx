@@ -411,6 +411,58 @@ export default function BusyAnalyticsDashboard() {
           </div>
         </section>
 
+        <section className="marriott-overview-hero">
+          <div className="overview-photo-main">
+            <span>Residence Inn Anaheim Resort</span>
+            <strong>Extended-stay suites near Disneyland Resort</strong>
+          </div>
+          <div className="overview-photo-stack">
+            <div><span>Complimentary Breakfast</span></div>
+            <div><span>Rooftop Pool & Hot Tub</span></div>
+          </div>
+        </section>
+
+        <section className="marriott-welcome-section">
+          <div>
+            <span className="eyebrow">Welcome to {tripPropertyName}</span>
+            <h2>Maintain your balance near Anaheim Resort and Convention Center</h2>
+          </div>
+          <p>
+            Streamline your stay with spacious suites, full kitchens, free Wi‑Fi,
+            complimentary hot breakfast, a rooftop pool and hot tub, a fitness
+            center, and convenient access to Disneyland Resort and the Anaheim
+            Convention Center.
+          </p>
+        </section>
+
+        <section className="marriott-feature-grid" aria-label="Hotel highlights">
+          <article>
+            <span>☕</span>
+            <h3>Complimentary Breakfast</h3>
+            <p>Start your day with a free hot breakfast during your stay.</p>
+          </article>
+          <article>
+            <span>▤</span>
+            <h3>All-Suite Comfort</h3>
+            <p>Studio, one-bedroom and two-bedroom suites with full kitchens.</p>
+          </article>
+          <article>
+            <span>≈</span>
+            <h3>Rooftop Pool</h3>
+            <p>Outdoor pool, hot tub, splash zone and cabana-style relaxation.</p>
+          </article>
+          <article>
+            <span>🏋</span>
+            <h3>Fitness Center</h3>
+            <p>Stay on routine with cardio, weights, and wellness amenities.</p>
+          </article>
+        </section>
+
+        <section className="marriott-location-strip">
+          <strong>640 West Katella Avenue, Anaheim, California, USA</strong>
+          <span>Near Disneyland Resort · Anaheim Convention Center · Downtown Disney District</span>
+        </section>
+
         {!checkedIn ? (
           <section className="enterprise-checkin-panel">
             <div className="control-group">
