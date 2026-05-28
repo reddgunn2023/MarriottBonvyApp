@@ -158,12 +158,12 @@ OPEN_HOURS_BY_AMENITY = {
         "saturday_sunday": "7:00 AM-10:00 PM",
     },
     "restaurants": {
-        "monday_friday": "6:30 AM-11:00 PM",
-        "saturday_sunday": "6:30 AM-11:00 PM",
+        "monday_friday": "6:30 AM-9:30 AM",
+        "saturday_sunday": "7:00 AM-10:00 AM",
     },
     "lounges": {
-        "monday_friday": "4:00 PM-11:30 PM",
-        "saturday_sunday": "4:00 PM-11:30 PM",
+        "monday_friday": "5:00 PM-10:00 PM",
+        "saturday_sunday": "5:00 PM-10:00 PM",
     },
     "tennis": {
         "monday_friday": "6:00 AM-10:00 PM",

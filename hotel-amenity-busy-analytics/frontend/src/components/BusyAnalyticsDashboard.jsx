@@ -102,6 +102,10 @@ function formatTimeSlot(slot) {
   return slot.replace(/\b0(\d):/g, "$1:").replace(/:/g, ".");
 }
 
+function formatStartHour(slot) {
+  return formatTimeSlot(slot).split("-")[0];
+}
+
 function routeContext() {
   const [propertyFromPath, userFromPath] = window.location.pathname
     .split("/")
@@ -192,7 +196,7 @@ export default function BusyAnalyticsDashboard() {
         const bucketEnd = `${String((Number(hour) + 1) % 24).padStart(2, "0")}:00`;
         const key = `${bucketStart}-${bucketEnd}`;
         const existing = buckets.get(key) || {
-          label: formatTimeSlot(key),
+          label: formatStartHour(key),
           date: slot.date,
           slots: [],
           busyScore: 0,
@@ -309,20 +313,25 @@ export default function BusyAnalyticsDashboard() {
         const nextState = eventType === "RESERVE"
           ? "RESERVED"
           : eventType === "CANCEL"
-            ? "CANCELLED"
+            ? undefined
             : "WAITLISTED";
-        setActionStates((current) => ({
-          ...current,
-          [slotId]: nextState,
-        }));
-        setActionMessages((current) => ({
-          ...current,
-          [slotId]: eventType === "WAITLIST"
-            ? `Joined Waiting Line${result.waitlist_position ? ` - Position ${result.waitlist_position}` : ""}`
-            : nextState === "RESERVED"
-              ? "Reserved"
-              : "Cancelled",
-        }));
+        setActionStates((current) => {
+          const updated = { ...current };
+          if (nextState) updated[slotId] = nextState;
+          else delete updated[slotId];
+          return updated;
+        });
+        setActionMessages((current) => {
+          const updated = { ...current };
+          if (eventType === "WAITLIST") {
+            updated[slotId] = `Joined Waiting Line${result.waitlist_position ? ` - Position ${result.waitlist_position}` : ""}`;
+          } else if (eventType === "RESERVE") {
+            updated[slotId] = "Reserved";
+          } else {
+            delete updated[slotId];
+          }
+          return updated;
+        });
       }
       setEventMessage(result.message);
       await loadSchedule();
