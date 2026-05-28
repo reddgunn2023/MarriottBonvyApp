@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
+  ResponsiveContainer,
   BarChart,
   Bar,
   XAxis,
@@ -596,62 +597,66 @@ export default function BusyAnalyticsDashboard() {
                     <p>The hourly busy and demand metrics are displayed for the chosen stay date.</p>
                     <small className="graph-open-hours">{formatOpenHours(selectedAmenityOpenHours)}</small>
                   </div>
-                  <label className="stay-date-metric-select">
-                    <span>Stay Date</span>
-                    <select
-                      value={selectedAnalyticsDate}
-                      onChange={(event) => {
-                        setSelectedAnalyticsDate(event.target.value);
-                        setSelectedSlotsByAmenity({});
-                      }}
-                    >
-                      {analyticsDateOptions.map((dateOption) => (
-                        <option key={dateOption} value={dateOption}>{dateOption}</option>
-                      ))}
-                    </select>
-                  </label>
                 </div>
                 <div className="enterprise-chart-frame">
-                  <BarChart
-                    width={Math.max(680, chartDataFor(rows).length * 58)}
-                    height={260}
-                    data={chartDataFor(rows)}
-                    margin={{ top: 12, right: 20, left: 4, bottom: 52 }}
-                    onClick={(event) => {
-                      const slot = event?.activePayload?.[0]?.payload?.slot;
-                      if (slot) {
-                        setSelectedSlotsByAmenity((current) => ({ ...current, [amenityName]: slot }));
-                      }
-                    }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis
-                      dataKey="label"
-                      interval={0}
-                      minTickGap={0}
-                      angle={0}
-                      textAnchor="middle"
-                      height={36}
-                      tick={{ fontSize: 11 }}
-                    />
-                    <YAxis domain={[0, 1]} />
-                    <Tooltip
-                      formatter={(value, name) => [typeof value === "number" ? scoreLevel(value) : value, name]}
-                      labelFormatter={(_label, payload) => {
-                        const slot = payload?.[0]?.payload?.slot;
-                        return slot ? `${slot.date} · ${formatTimeSlot(slot.time_slot)}` : _label;
-                      }}
-                    />
-                    <Bar dataKey="statusScore" name="Busy Status" cursor="pointer" barSize={36} maxBarSize={36} isAnimationActive={false} onClick={(data) => data?.slot && setSelectedSlotsByAmenity((current) => ({ ...current, [amenityName]: data.slot }))}>
-                      {chartDataFor(rows).map((entry, index) => (
-                        <Cell
-                          key={`${entry.date}-${entry.label}-${index}`}
-                          fill={statusColor(entry)}
-                          onClick={() => setSelectedSlotsByAmenity((current) => ({ ...current, [amenityName]: entry.slot }))}
+                  <div className="chart-frame-toolbar">
+                    <label className="chart-stay-date-select">
+                      <span>Stay Date</span>
+                      <select
+                        value={selectedAnalyticsDate}
+                        onChange={(event) => {
+                          setSelectedAnalyticsDate(event.target.value);
+                          setSelectedSlotsByAmenity({});
+                        }}
+                      >
+                        {analyticsDateOptions.map((dateOption) => (
+                          <option key={dateOption} value={dateOption}>{dateOption}</option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                  <div className="chart-plot-area">
+                    <ResponsiveContainer width="100%" height={260}>
+                      <BarChart
+                        data={chartDataFor(rows)}
+                        margin={{ top: 12, right: 12, left: 0, bottom: 52 }}
+                        onClick={(event) => {
+                          const slot = event?.activePayload?.[0]?.payload?.slot;
+                          if (slot) {
+                            setSelectedSlotsByAmenity((current) => ({ ...current, [amenityName]: slot }));
+                          }
+                        }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis
+                          dataKey="label"
+                          interval={0}
+                          minTickGap={0}
+                          angle={0}
+                          textAnchor="middle"
+                          height={36}
+                          tick={{ fontSize: 11 }}
                         />
-                      ))}
-                    </Bar>
-                  </BarChart>
+                        <YAxis domain={[0, 1]} />
+                        <Tooltip
+                          formatter={(value, name) => [typeof value === "number" ? scoreLevel(value) : value, name]}
+                          labelFormatter={(_label, payload) => {
+                            const slot = payload?.[0]?.payload?.slot;
+                            return slot ? `${slot.date} · ${formatTimeSlot(slot.time_slot)}` : _label;
+                          }}
+                        />
+                        <Bar dataKey="statusScore" name="Busy Status" cursor="pointer" barSize={36} maxBarSize={36} isAnimationActive={false} onClick={(data) => data?.slot && setSelectedSlotsByAmenity((current) => ({ ...current, [amenityName]: data.slot }))}>
+                          {chartDataFor(rows).map((entry, index) => (
+                            <Cell
+                              key={`${entry.date}-${entry.label}-${index}`}
+                              fill={statusColor(entry)}
+                              onClick={() => setSelectedSlotsByAmenity((current) => ({ ...current, [amenityName]: entry.slot }))}
+                            />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
                   <div className="chart-color-legend" aria-label="Histogram color legend">
                     <span><i className="legend-dot legend-green" />Green - availability / low busy</span>
                     <span><i className="legend-dot legend-yellow" />Yellow - moderate</span>
