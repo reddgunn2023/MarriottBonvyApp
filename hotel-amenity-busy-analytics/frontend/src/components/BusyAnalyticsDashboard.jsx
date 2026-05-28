@@ -217,16 +217,6 @@ export default function BusyAnalyticsDashboard() {
         : "Property Amenities On-Site";
 
   const selectedAmenityList = useMemo(() => (amenity ? [amenity] : []), [amenity]);
-  const analyticsDateOptions = useMemo(() => {
-    const dates = [];
-    const cursor = new Date(`${checkIn}T00:00:00`);
-    const end = new Date(`${checkOut}T00:00:00`);
-    while (cursor < end) {
-      dates.push(cursor.toISOString().slice(0, 10));
-      cursor.setDate(cursor.getDate() + 1);
-    }
-    return dates;
-  }, [checkIn, checkOut]);
   const analyticsEntries = Object.entries(analyticsByAmenity);
   const chartDataFor = useCallback((slots) => {
     const buckets = new Map();
@@ -596,20 +586,6 @@ export default function BusyAnalyticsDashboard() {
                     <p>The hourly busy and demand metrics are displayed for the chosen stay dates.</p>
                     <small className="graph-open-hours">{formatOpenHours(selectedAmenityOpenHours)}</small>
                   </div>
-                  <label className="graph-date-select">
-                    <span>select the stay dates</span>
-                    <select
-                      value={selectedAnalyticsDate}
-                      onChange={(event) => {
-                        setSelectedAnalyticsDate(event.target.value);
-                        setSelectedSlotsByAmenity({});
-                      }}
-                    >
-                      {analyticsDateOptions.map((dateOption) => (
-                        <option key={dateOption} value={dateOption}>{dateOption}</option>
-                      ))}
-                    </select>
-                  </label>
                 </div>
                 <div className="enterprise-chart-frame">
                   <BarChart
