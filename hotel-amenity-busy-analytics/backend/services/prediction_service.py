@@ -141,14 +141,18 @@ def train_lightgbm_model(force: bool = False):
 
 
 def predict_future_busy(slot: dict) -> float | None:
-    """Return LightGBM futureBusy prediction, or None if model unavailable."""
-    model = train_lightgbm_model()
-    if model is None:
+    """Return prediction from an already-cached LightGBM model.
+
+    This intentionally does not train lazily. Call POST /amenities/prediction/train
+    when mock data changes and a refreshed model should be cached. Until then,
+    callers can use deterministic fallback scoring.
+    """
+    if _MODEL is None:
         return None
     try:
         import numpy as np
 
-        prediction = float(model.predict(np.array([_features(slot)], dtype=float))[0])
+        prediction = float(_MODEL.predict(np.array([_features(slot)], dtype=float))[0])
         return round(max(0.0, min(prediction, 1.0)), 2)
     except Exception as exc:  # pragma: no cover - defensive fallback path
         global _MODEL_ERROR

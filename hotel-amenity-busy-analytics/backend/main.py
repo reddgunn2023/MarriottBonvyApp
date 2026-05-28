@@ -49,12 +49,6 @@ app.add_middleware(
 )
 
 
-@app.on_event("startup")
-def warm_prediction_model():
-    """Train LightGBM once so prediction is ready for analytics requests."""
-    train_lightgbm_model()
-
-
 @app.get("/")
 def root():
     return {"message": "Hotel Amenity Busy Analytics API", "status": "running"}
