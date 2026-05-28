@@ -3589,3 +3589,39 @@ input {
 .featured-analytics-canvas .expected-busy-card {
   padding: 14px 16px;
 }
+
+.editable-date-summary {
+  display: grid;
+  grid-template-columns: auto minmax(135px, 1fr) auto minmax(135px, 1fr);
+  align-items: center;
+  gap: 12px;
+}
+
+.editable-date-summary > span {
+  grid-column: 1 / -1;
+}
+
+.editable-date-summary label {
+  display: grid;
+  gap: 4px;
+}
+
+.editable-date-summary small {
+  color: #8b8179;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.editable-date-summary input {
+  width: 100%;
+  min-height: 38px;
+  border: 0;
+  border-bottom: 1px solid #d8d1c8;
+  background: transparent;
+  color: #232323;
+  font-size: 0.95rem;
+  font-weight: 700;
+  outline: none;
+}

@@ -155,6 +155,12 @@ export default function BusyAnalyticsDashboard() {
     loadInitialData().catch(console.error);
   }, [propertyId, guestId]);
 
+  useEffect(() => {
+    if (selectedAnalyticsDate < checkIn || selectedAnalyticsDate > checkOut) {
+      setSelectedAnalyticsDate(checkIn);
+    }
+  }, [checkIn, checkOut, selectedAnalyticsDate]);
+
   const selectedProperty = useMemo(
     () => properties.find((property) => property.id === propertyId),
     [properties, propertyId],
@@ -435,11 +441,39 @@ export default function BusyAnalyticsDashboard() {
             </div>
           </div>
           <div className="booking-summary-row">
-            <div className="booking-summary-item date-summary-item">
+            <div className="booking-summary-item date-summary-item editable-date-summary">
               <span>Dates (1 Night)</span>
-              <strong>{checkIn}</strong>
+              <label>
+                <small>Check-in</small>
+                <input
+                  type="date"
+                  value={checkIn}
+                  onChange={(event) => {
+                    const nextCheckIn = event.target.value;
+                    setCheckIn(nextCheckIn);
+                    setSelectedAnalyticsDate(nextCheckIn);
+                    if (checkOut <= nextCheckIn) {
+                      setCheckOut(addDays(nextCheckIn, 1));
+                    }
+                    setAnalyticsByAmenity({});
+                    setSelectedSlotsByAmenity({});
+                  }}
+                />
+              </label>
               <em>→</em>
-              <strong>{checkOut}</strong>
+              <label>
+                <small>Checkout</small>
+                <input
+                  type="date"
+                  value={checkOut}
+                  min={addDays(checkIn, 1)}
+                  onChange={(event) => {
+                    setCheckOut(event.target.value);
+                    setAnalyticsByAmenity({});
+                    setSelectedSlotsByAmenity({});
+                  }}
+                />
+              </label>
             </div>
             <div className="booking-summary-item">
               <span>Rooms & Guests</span>
